@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateInvoice } from '../hooks/useCreateInvoice';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 import InvoiceForm from '../components/invoice/InvoiceForm';
 import InvoicePreview from '../components/invoice/InvoicePreview';
 
@@ -20,10 +21,18 @@ const CreateInvoice = () => {
         initialLines: []
     });
 
-    const handleSave = async () => {
+    const { user } = useAuth();
+
+    const handleSave = async (isDraft = false) => {
+        if (!user?.isVerified) {
+            addNotification('You must verify your email in Settings to create an invoice.', 'error');
+            return;
+        }
+
         try {
-            const newInvoice = await create(formData);
-            addNotification('Invoice created successfully!', 'success');
+            const payload = { ...formData, isDraft };
+            const newInvoice = await create(payload);
+            addNotification(isDraft ? 'Invoice saved as draft!' : 'Invoice created successfully!', 'success');
             navigate(`/invoices/${newInvoice._id}`);
         } catch (err) {
             addNotification('Failed to create invoice', 'error');

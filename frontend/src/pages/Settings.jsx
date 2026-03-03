@@ -4,10 +4,24 @@ import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
 import { User, Building, Bell, Shield, Key } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
     const { addNotification } = useNotification();
+    const { user, verifyEmail } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
+
+    const handleVerifyMock = async () => {
+        // In reality, user clicks a link in their email which visits an endpoint or includes a token in URL.
+        const token = window.prompt("Enter the verification token from your console/network:");
+        if (token) {
+            try {
+                await verifyEmail(token);
+            } catch (error) {
+                // error handled in context
+            }
+        }
+    };
 
     const handleSave = (e) => {
         e.preventDefault();
@@ -60,19 +74,29 @@ const Settings = () => {
                     <form onSubmit={handleSave}>
                         {activeTab === 'profile' && (
                             <div>
-                                <h2 className="section-title mb-20">Profile Settings</h2>
+                                <h2 className="section-title mb-20 text-large">Profile Settings</h2>
                                 <div className="flex-align-center mb-20 gap-10">
-                                    <div className="user-avatar" style={{ width: '64px', height: '64px' }}>
-                                        <User size={32} />
+                                    <div className="user-avatar" style={{ width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-color)', color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>
+                                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={32} />}
                                     </div>
                                     <Button variant="secondary" type="button">Change Avatar</Button>
+                                    {!user?.isVerified && (
+                                        <Button
+                                            variant="secondary"
+                                            type="button"
+                                            onClick={handleVerifyMock}
+                                            style={{ borderColor: 'var(--warning-color)', color: 'var(--warning-color)' }}
+                                        >
+                                            Simulate Email Verification
+                                        </Button>
+                                    )}
                                 </div>
                                 <div className="grid-2 mb-15">
-                                    <InputField label="First Name" defaultValue="John" />
-                                    <InputField label="Last Name" defaultValue="Doe" />
+                                    <InputField label="First Name" defaultValue={user?.name?.split(' ')[0] || ''} />
+                                    <InputField label="Last Name" defaultValue={user?.name?.split(' ').slice(1).join(' ') || ''} />
                                 </div>
                                 <div className="mb-15">
-                                    <InputField label="Email Address" type="email" defaultValue="john.doe@example.com" />
+                                    <InputField label="Email Address" type="email" defaultValue={user?.email || ''} readOnly />
                                 </div>
                                 <div className="mb-15">
                                     <InputField label="Phone Number" defaultValue="+1 (555) 123-4567" />

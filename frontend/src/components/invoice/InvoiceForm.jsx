@@ -125,14 +125,15 @@ const InvoiceForm = ({ formData, setFormData, onSave, isSaving }) => {
                     <Button
                         variant="secondary"
                         type="button"
-                        onClick={handleSubmit}
+                        onClick={() => onSave(true)}
                         disabled={isSaving}
                     >
                         {isSaving ? 'Saving...' : 'Save as Draft'}
                     </Button>
                     <Button
-                        type="submit"
+                        type="button"
                         variant="primary"
+                        onClick={(e) => { e.preventDefault(); onSave(false); }}
                         disabled={isSaving || formData.initialLines.length === 0}
                     >
                         {isSaving ? 'Saving...' : 'Save & Send'}

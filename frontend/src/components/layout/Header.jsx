@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Search, User, Menu, Settings as SettingsIcon, LogOut } from 'lucide-react';
 import NotificationBell from '../notification/NotificationBell';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = ({ toggleSidebar }) => {
     const navigate = useNavigate();
+    const { logout, user } = useAuth();
     const [profileOpen, setProfileOpen] = useState(false);
     const profileRef = useRef(null);
 
@@ -19,8 +21,8 @@ const Header = ({ toggleSidebar }) => {
     }, []);
 
     const handleLogout = () => {
-        // Implement logout logic here later if needed
-        navigate('/');
+        logout();
+        navigate('/login');
         setProfileOpen(false);
     };
 
@@ -41,11 +43,11 @@ const Header = ({ toggleSidebar }) => {
                 </div>
             </div>
 
-            <div className="topbar-right" style={{ position: 'relative', display: 'flex', gap: '1rem' }}>
+            <div className="topbar-right" style={{ position: 'relative', display: 'flex', gap: '1rem', alignItems: 'center' }}>
                 <NotificationBell />
                 <div className="bell-container" ref={profileRef} onClick={() => setProfileOpen(!profileOpen)} style={{ position: 'relative' }}>
-                    <div className="user-avatar" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s', boxShadow: profileOpen ? '0 0 0 2px var(--primary-color)' : 'none' }}>
-                        <User size={20} />
+                    <div className="user-avatar" style={{ cursor: 'pointer', transition: 'box-shadow 0.2s', boxShadow: profileOpen ? '0 0 0 2px var(--primary-color)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-color)', color: '#fff', fontWeight: 'bold' }}>
+                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={20} />}
                     </div>
                     {profileOpen && (
                         <div className="notification-dropdown" style={{ width: '200px' }}>

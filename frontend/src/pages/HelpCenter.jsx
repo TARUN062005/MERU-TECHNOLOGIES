@@ -49,7 +49,18 @@ const HelpCenter = () => {
                     <input
                         type="text"
                         placeholder="Search articles, tutorials, FAQs..."
-                        style={{ width: '100%', padding: '1rem 1rem 1rem 3rem', borderRadius: '99px', border: 'none', outline: 'none', fontSize: '1rem' }}
+                        style={{
+                            width: '100%',
+                            padding: '1rem 1rem 1rem 3rem',
+                            borderRadius: '12px',
+                            backgroundColor: 'white',
+                            color: 'var(--text-main)',
+                            border: '2px solid rgba(255, 255, 255, 0.2)',
+                            borderBottom: '4px solid rgba(0,0,0,0.1)',
+                            outline: 'none',
+                            fontSize: '1rem',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.05)'
+                        }}
                     />
                 </div>
             </Card>
