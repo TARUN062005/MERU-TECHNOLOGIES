@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const invoiceSchema = new mongoose.Schema({
     invoiceNumber: { type: String, required: true },
     customerName: { type: String, required: true },
-    issueDate: { type: Date },
-    dueDate: { type: Date },
+    issueDate: { type: Date, required: true },
+    dueDate: { type: Date, required: true },
     status: { type: String, enum: ['DRAFT', 'PAID'], default: 'DRAFT' },
     total: { type: Number, default: 0 },
     amountPaid: { type: Number, default: 0 },

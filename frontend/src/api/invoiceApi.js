@@ -1,7 +1,17 @@
 import axiosInstance from './axiosInstance';
 
+export const createInvoice = async (data) => {
+    const response = await axiosInstance.post('/invoices', data);
+    return response.data;
+};
+
 export const getInvoiceById = async (id) => {
     const response = await axiosInstance.get(`/invoices/${id}`);
+    return response.data;
+};
+
+export const addLineItem = async (id, data) => {
+    const response = await axiosInstance.post(`/invoices/${id}/lines`, data);
     return response.data;
 };
 
@@ -10,12 +20,12 @@ export const addPayment = async (id, amount) => {
     return response.data;
 };
 
-export const archiveInvoice = async (invoiceId) => {
-    const response = await axiosInstance.post('/invoices/archive', { invoiceId });
+export const archiveInvoice = async (id) => {
+    const response = await axiosInstance.post(`/invoices/${id}/archive`);
     return response.data;
 };
 
-export const restoreInvoice = async (invoiceId) => {
-    const response = await axiosInstance.post('/invoices/restore', { invoiceId });
+export const restoreInvoice = async (id) => {
+    const response = await axiosInstance.post(`/invoices/${id}/restore`);
     return response.data;
 };

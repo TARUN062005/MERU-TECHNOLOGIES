@@ -2,51 +2,109 @@ const Invoice = require('../models/Invoice');
 const InvoiceLine = require('../models/InvoiceLine');
 const Payment = require('../models/Payment');
 
-const getInvoiceDetails = async (id) => {
+const getInvoiceResponse = async (id) => {
     const invoice = await Invoice.findById(id).lean();
     if (!invoice) throw new Error('Invoice not found');
-
     const lineItems = await InvoiceLine.find({ invoiceId: id }).lean();
     const payments = await Payment.find({ invoiceId: id }).lean();
-
     return { ...invoice, lineItems, payments };
 };
 
-const addPayment = async (id, amount) => {
-    if (amount <= 0) throw new Error('Amount must be greater than 0');
+const createInvoice = async (data) => {
+    const { invoiceNumber, customerName, issueDate, dueDate, initialLines } = data;
+    if (!invoiceNumber || !customerName || !issueDate || !dueDate) {
+        throw new Error('Missing required fields');
+    }
 
+    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate });
+    await invoice.save();
+
+    if (initialLines && initialLines.length > 0) {
+        let total = 0;
+        const linesToInsert = initialLines.map(line => {
+            if (line.quantity < 0 || line.unitPrice < 0) throw new Error('Negative values not allowed');
+            const lineTotal = line.quantity * line.unitPrice;
+            total += lineTotal;
+            return {
+                invoiceId: invoice._id,
+                description: line.description,
+                quantity: line.quantity,
+                unitPrice: line.unitPrice,
+                lineTotal
+            };
+        });
+
+        await InvoiceLine.insertMany(linesToInsert);
+        invoice.total = total;
+        invoice.balanceDue = total;
+        await invoice.save();
+    }
+
+    return getInvoiceResponse(invoice._id);
+};
+
+const getInvoice = async (id) => {
+    return getInvoiceResponse(id);
+};
+
+const addLineItem = async (id, data) => {
     const invoice = await Invoice.findById(id);
     if (!invoice) throw new Error('Invoice not found');
-    if (amount > invoice.balanceDue) throw new Error('Overpayment not allowed');
+
+    const { description, quantity, unitPrice } = data;
+    if (!description || quantity == null || unitPrice == null) throw new Error('Missing required fields');
+    if (quantity < 0 || unitPrice < 0) throw new Error('Negative values not allowed');
+
+    const lineTotal = quantity * unitPrice;
+    const lineItem = new InvoiceLine({ invoiceId: id, description, quantity, unitPrice, lineTotal });
+    await lineItem.save();
+
+    const lines = await InvoiceLine.find({ invoiceId: id });
+    const total = lines.reduce((acc, curr) => acc + curr.lineTotal, 0);
+
+    invoice.total = total;
+    invoice.balanceDue = total - invoice.amountPaid;
+    if (invoice.balanceDue === 0 && invoice.total > 0) invoice.status = 'PAID';
+    if (invoice.balanceDue > 0) invoice.status = 'DRAFT';
+    await invoice.save();
+
+    return getInvoiceResponse(id);
+};
+
+const addPayment = async (id, amount) => {
+    if (amount <= 0) throw new Error('Payment amount must be greater than zero');
+    const invoice = await Invoice.findById(id);
+    if (!invoice) throw new Error('Invoice not found');
+
+    if (amount > invoice.balanceDue) throw new Error('Payment exceeds balance due');
 
     const payment = new Payment({ invoiceId: id, amount });
     await payment.save();
 
     invoice.amountPaid += amount;
     invoice.balanceDue = invoice.total - invoice.amountPaid;
-
-    if (invoice.balanceDue === 0) {
-        invoice.status = 'PAID';
-    }
-
+    if (invoice.balanceDue === 0) invoice.status = 'PAID';
     await invoice.save();
-    return getInvoiceDetails(id);
+
+    return getInvoiceResponse(id);
 };
 
 const archiveInvoice = async (id) => {
     const invoice = await Invoice.findByIdAndUpdate(id, { isArchived: true }, { new: true });
     if (!invoice) throw new Error('Invoice not found');
-    return invoice;
+    return getInvoiceResponse(id);
 };
 
 const restoreInvoice = async (id) => {
     const invoice = await Invoice.findByIdAndUpdate(id, { isArchived: false }, { new: true });
     if (!invoice) throw new Error('Invoice not found');
-    return invoice;
+    return getInvoiceResponse(id);
 };
 
 module.exports = {
-    getInvoiceDetails,
+    createInvoice,
+    getInvoice,
+    addLineItem,
     addPayment,
     archiveInvoice,
     restoreInvoice

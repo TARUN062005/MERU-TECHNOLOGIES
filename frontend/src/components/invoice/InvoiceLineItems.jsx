@@ -1,4 +1,5 @@
 import React from 'react';
+import Table from '../common/Table';
 import EmptyState from '../common/EmptyState';
 
 const formatCurrency = (amount) => {
@@ -19,8 +20,8 @@ const InvoiceLineItems = ({ items }) => {
                 </tr>
             </thead>
             <tbody>
-                {items.map((item, index) => (
-                    <tr key={item._id || index}>
+                {items.map(item => (
+                    <tr key={item._id}>
                         <td data-label="Description" className="text-left">{item.description}</td>
                         <td data-label="Quantity" className="text-right">{item.quantity}</td>
                         <td data-label="Unit Price" className="text-right">{formatCurrency(item.unitPrice)}</td>

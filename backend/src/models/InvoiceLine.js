@@ -5,12 +5,7 @@ const invoiceLineSchema = new mongoose.Schema({
     description: { type: String, required: true },
     quantity: { type: Number, required: true },
     unitPrice: { type: Number, required: true },
-    lineTotal: { type: Number }
-});
-
-invoiceLineSchema.pre('save', function (next) {
-    this.lineTotal = this.quantity * this.unitPrice;
-    next();
+    lineTotal: { type: Number, required: true }
 });
 
 module.exports = mongoose.model('InvoiceLine', invoiceLineSchema);

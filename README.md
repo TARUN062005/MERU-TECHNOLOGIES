@@ -1,120 +1,53 @@
-# FinDash Invoice Dashboard
+# FinDash - Invoice Details Module
 
-A modern, responsive, full-stack Invoice Details Module designed for SaaS, featuring Node.js, Express, MongoDB on the backend, and React/Vite on the frontend. No UI libraries (like Bootstrap/Tailwind) were used; it contains purely custom CSS optimized for mobile-first views and SaaS aesthetics.
+A complete, production-ready Full-Stack Invoice Management Application rebuilt securely from scratch without any mock values, inline data, templates, or third-party CSS libraries. 
 
-## Features
-- **Mobile-first responsive UI**: Tables convert into stacked cards on mobile devices.
-- **"Fintech" Dashboard Aesthetics**: Clean, professional layout using custom CSS variables securely mapped to standard SaaS colors and grids.
-- **Reusable UI Components**: Modular architecture promoting cleaner code (Buttons, Badges, Modals, Sections).
-- **Add Payments**: Dynamically update `BalanceDue` and `AmountPaid`. Real-time validation preventing overpayments and auto-status resolution when fully paid.
-- **Architecture**: Separated Frontend/Backend logic without any inline styles or console.logs. 
+## 🛠️ Technology Stack
+- **Frontend**: React + Vite + Custom CSS + React Router DOM + Axios
+- **Backend**: Node.js + Express + MongoDB + Mongoose 
 
 ---
 
-## Setup & Installation Instructions
+## 🔥 Application Features
+- **Live Preview Dashboarding**: Full Split-Screen view during Invoice Initialization updating precisely in real-time as state data updates locally.
+- **Strict No Overpayments Backend Validator**: Rejects arbitrary values over `BalanceDue` via the backend services, calculating lines efficiently dynamically.
+- **Status Autosyncs**: Auto-tags the Invoice Status as `PAID` once the specific payload targets compute exactly a zero `BalanceDue`.
+- **Global Toast Notification Context**: Alerts user visually across the architecture successfully across validations, insertions, edits, or archives synchronously.
+- **REST APIs Complete Isolation**: Database abstractions strictly limited internally within the `invoiceService` class layers decoupled cleanly from explicit route mapping `invoiceRoutes`.  
 
-### Backend Setup
+---
 
-1. Open your terminal and navigate to the `backend` directory:
-   ```bash
-   cd invoice-app/backend
-   ```
-2. Install the necessary dependencies (Express, Mongoose, dotenv, cors):
-   ```bash
-   npm install
-   ```
-3. Ensure you have MongoDB running locally, or modify `MONGO_URI` in `.env`.
-4. Run the development server (uses nodemon):
-   ```bash
-   npm run dev
-   ```
-   *The backend will be live on `http://localhost:5000`.*
+## 🚀 Setup & Execution 
 
-### Frontend Setup
-
-1. Open a new terminal tab/window and navigate to the `frontend` directory:
-   ```bash
-   cd invoice-app/frontend
-   ```
-2. Install the standard dependencies (React, React-Router-DOM, Axios, Date-fns, Vite):
-   ```bash
-   npm install
-   ```
-3. Start the Vite dev server:
-   ```bash
-   npm run dev
-   ```
-   *The frontend will be live on `http://localhost:3000`.*
-
-### Environment Variables
-
-An `.env` file is generated inside the `backend` folder:
+1. **Configure Environment**
+Ensure you have MongoDB running natively. Inside `invoice-app/backend/.env`:
 ```env
 PORT=5000
 MONGO_URI=mongodb://localhost:27017/invoice-app
 ```
 
+2. **Run Backend Node Server**
+```bash
+cd invoice-app/backend
+npm install
+npm run dev
+```
+
+3. **Run Frontend Vite Client**
+```bash
+cd invoice-app/frontend
+npm install
+npm run dev
+```
+Navigate your browser to: `http://localhost:3000`
+
 ---
 
-## API Documentation Summary
+## 📖 API Documentation Summary
 
-1. `GET /api/invoices/:id` 
-   - **Description**: Returns deep invoice details, fetching associated line items and previous payments.
-2. `POST /api/invoices/:id/payments` 
-   - **Description**: Record a new payment linked to the invoice, ensuring no overpayments, reducing the balance, and updating the status to 'PAID' if `balanceDue` hits 0.
-3. `POST /api/invoices/archive` 
-   - **Description**: Marks the invoice's `isArchived` flag as true.
-4. `POST /api/invoices/restore` 
-   - **Description**: Unarchives a previously archived invoice.
-
----
-
-## Project Structure Explanation
-
-```
-invoice-app/
-  ├── backend/
-  │   ├── src/
-  │   │   ├── config/          # Configurations (e.g., db connection)
-  │   │   ├── controllers/     # Route logic endpoints abstraction
-  │   │   ├── models/          # Mongoose Schemas (Invoice, InvoiceLine, Payment)
-  │   │   ├── routes/          # Express Routers mappings
-  │   │   ├── services/        # Thick business logic (payment validation, aggregation)
-  │   │   ├── app.js           # Express App configuration
-  │   │   └── server.js        # Executable entry point
-  │   └── package.json
-  │
-  ├── frontend/
-  │   ├── src/
-  │   │   ├── api/             # Centralized Axios interface requests
-  │   │   ├── components/      # Isolated modular React UI logic
-  │   │   │   ├── common/      # Reusable UI (Buttons, Card, Modal, Tokens)
-  │   │   │   ├── invoice/     # Domain-specific modules (Header, Lines, Totals)
-  │   │   │   └── payment/     # Payment rendering lists and add modal overlays
-  │   │   ├── hooks/           # Encapsulated state lifecycle (e.g., useInvoices)
-  │   │   ├── pages/           # High-Level Route components (e.g., InvoiceDetail views)
-  │   │   ├── styles/          # Vanilla Custom CSS for scaling aesthetics
-  │   │   ├── App.jsx          # Route mapping
-  │   │   └── main.jsx         # React application execution point
-  │   └── package.json
-  │
-  └── README.md
-```
-
-## Seeding MongoDB Data Template (Testing)
-You can directly insert an entity into your MongoDB to visualize the UI. Replace the ID in the frontend URL (`localhost:3000/invoices/YOUR_OBJECT_ID`) with your newly created ID.
-
-```json
-{
-  "invoiceNumber": "INV-10250",
-  "customerName": "Stark Industries",
-  "issueDate": "2026-03-01T00:00:00Z",
-  "dueDate": "2026-04-01T00:00:00Z",
-  "status": "DRAFT",
-  "total": 5500,
-  "amountPaid": 0,
-  "balanceDue": 5500,
-  "isArchived": false
-}
-```
-Create a matching line item pointing to the newly generated `_id` above as `invoiceId` on the `InvoiceLine` model to see lines rendered on the UI dashboard.
+The backend uses RESTful standards exposing pure business models safely.
+- `POST /api/invoices` - Bootstraps an initial invoice including its default array lines natively. 
+- `GET /api/invoices/:id` - Populates invoice models deep binding `lineItems` and `payments` records natively utilizing Mongo. 
+- `POST /api/invoices/:id/lines` - Commits a novel `LineItem` entry specifically pushing it securely against its parent invoice constraint recalculating values automatically.
+- `POST /api/invoices/:id/payments` - Deposits payment allocations updating limits globally processing exceptions smoothly. 
+- `POST /api/invoices/:id/archive` & `restore` - Toggles boolean status flags safely updating UI representation correctly!
