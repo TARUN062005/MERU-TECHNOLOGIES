@@ -10,13 +10,28 @@ const getInvoiceResponse = async (id) => {
     return { ...invoice, lineItems, payments };
 };
 
+const getAllInvoices = async (query = {}) => {
+    const filter = {};
+    if (query.status && query.status !== 'All') {
+        filter.status = query.status.toUpperCase();
+    }
+    if (query.search) {
+        filter.$or = [
+            { invoiceNumber: { $regex: query.search, $options: 'i' } },
+            { customerName: { $regex: query.search, $options: 'i' } }
+        ];
+    }
+    const invoices = await Invoice.find(filter).sort({ issueDate: -1 }).lean();
+    return invoices;
+};
+
 const createInvoice = async (data) => {
-    const { invoiceNumber, customerName, issueDate, dueDate, initialLines } = data;
+    const { invoiceNumber, customerName, issueDate, dueDate, initialLines, address, currency } = data;
     if (!invoiceNumber || !customerName || !issueDate || !dueDate) {
         throw new Error('Missing required fields');
     }
 
-    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate });
+    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate, address, currency });
     await invoice.save();
 
     if (initialLines && initialLines.length > 0) {
@@ -103,6 +118,7 @@ const restoreInvoice = async (id) => {
 
 module.exports = {
     createInvoice,
+    getAllInvoices,
     getInvoice,
     addLineItem,
     addPayment,

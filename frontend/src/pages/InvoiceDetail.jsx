@@ -58,7 +58,7 @@ const InvoiceDetail = () => {
                         <div className="flex-end mb-10">
                             <Button onClick={() => setLineModalOpen(true)} disabled={isPaid || invoice.isArchived} variant="secondary">Add Line Item</Button>
                         </div>
-                        <InvoiceLineItems items={invoice.lineItems} />
+                        <InvoiceLineItems items={invoice.lineItems} currency={invoice.currency} />
                     </SectionContainer>
 
                     <SectionContainer title="Payments">
@@ -71,7 +71,7 @@ const InvoiceDetail = () => {
                                 Add Payment
                             </Button>
                         </div>
-                        <PaymentList payments={invoice.payments} />
+                        <PaymentList payments={invoice.payments} currency={invoice.currency} />
                     </SectionContainer>
                 </div>
 
@@ -81,6 +81,7 @@ const InvoiceDetail = () => {
                             total={invoice.total}
                             amountPaid={invoice.amountPaid}
                             balanceDue={invoice.balanceDue}
+                            currency={invoice.currency}
                         />
                     </SectionContainer>
                 </div>

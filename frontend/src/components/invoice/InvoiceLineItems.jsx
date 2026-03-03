@@ -2,11 +2,11 @@ import React from 'react';
 import Table from '../common/Table';
 import EmptyState from '../common/EmptyState';
 
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-};
+const InvoiceLineItems = ({ items, currency = 'USD' }) => {
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
+    };
 
-const InvoiceLineItems = ({ items }) => {
     if (!items || items.length === 0) return <EmptyState message="No line items found" />;
 
     return (

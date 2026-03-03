@@ -2,11 +2,11 @@ import React from 'react';
 import { format } from 'date-fns';
 import EmptyState from '../common/EmptyState';
 
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-};
+const PaymentList = ({ payments, currency = 'USD' }) => {
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
+    };
 
-const PaymentList = ({ payments }) => {
     if (!payments || payments.length === 0) return <EmptyState message="No payments recorded yet" />;
 
     return (

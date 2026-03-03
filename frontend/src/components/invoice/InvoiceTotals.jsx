@@ -1,10 +1,10 @@
 import React from 'react';
 
-const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
-};
+const InvoiceTotals = ({ total, amountPaid, balanceDue, currency = 'USD' }) => {
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
+    };
 
-const InvoiceTotals = ({ total, amountPaid, balanceDue }) => {
     return (
         <div className="totals-container">
             <div className="summary-row">

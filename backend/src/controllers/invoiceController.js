@@ -9,6 +9,15 @@ const createInvoice = async (req, res, next) => {
     }
 };
 
+const getAllInvoices = async (req, res, next) => {
+    try {
+        const data = await invoiceService.getAllInvoices(req.query);
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+};
+
 const getInvoice = async (req, res, next) => {
     try {
         const data = await invoiceService.getInvoice(req.params.id);
@@ -56,6 +65,7 @@ const restoreInvoice = async (req, res, next) => {
 
 module.exports = {
     createInvoice,
+    getAllInvoices,
     getInvoice,
     addLineItem,
     addPayment,

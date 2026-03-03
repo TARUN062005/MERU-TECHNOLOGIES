@@ -6,7 +6,7 @@ import Button from '../common/Button';
 const AddPaymentModal = ({ isOpen, onClose, balanceDue, onSubmit }) => {
     const [amount, setAmount] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(false); // This line was intended to be highlighted, not changed.
 
     const handleSubmit = async (e) => {
         e.preventDefault();

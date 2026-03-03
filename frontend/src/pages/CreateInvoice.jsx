@@ -13,15 +13,17 @@ const CreateInvoice = () => {
     const [formData, setFormData] = useState({
         invoiceNumber: '',
         customerName: '',
+        address: '',
         issueDate: '',
         dueDate: '',
+        currency: 'USD',
         initialLines: []
     });
 
     const handleSave = async () => {
         try {
             const newInvoice = await create(formData);
-            addNotification('Invoice created successfully!');
+            addNotification('Invoice created successfully!', 'success');
             navigate(`/invoices/${newInvoice._id}`);
         } catch (err) {
             addNotification('Failed to create invoice', 'error');
@@ -29,17 +31,20 @@ const CreateInvoice = () => {
     };
 
     return (
-        <div className="grid-2 mt-20">
-            <div className="form-section">
-                <InvoiceForm
-                    formData={formData}
-                    setFormData={setFormData}
-                    onSave={handleSave}
-                    isSaving={loading}
-                />
-            </div>
-            <div className="preview-section d-none-mobile">
-                <InvoicePreview formData={formData} />
+        <div className="mt-20">
+            <h1 className="section-title text-large mb-20 m-0">Create New Invoice</h1>
+            <div className="split-layout">
+                <div className="form-section">
+                    <InvoiceForm
+                        formData={formData}
+                        setFormData={setFormData}
+                        onSave={handleSave}
+                        isSaving={loading}
+                    />
+                </div>
+                <div className="preview-section">
+                    <InvoicePreview formData={formData} />
+                </div>
             </div>
         </div>
     );

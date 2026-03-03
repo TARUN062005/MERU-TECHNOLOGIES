@@ -3,6 +3,7 @@ const router = express.Router();
 const invoiceController = require('../controllers/invoiceController');
 
 router.post('/', invoiceController.createInvoice);
+router.get('/', invoiceController.getAllInvoices);
 router.get('/:id', invoiceController.getInvoice);
 router.post('/:id/lines', invoiceController.addLineItem);
 router.post('/:id/payments', invoiceController.addPayment);
