@@ -48,9 +48,52 @@ const InvoiceDetail = () => {
         addNotification('Line item added!');
     };
 
+    const handleDownload = () => {
+        // Since we import jsPDF, let's create a dynamic invoice doc
+        import('jspdf').then(({ default: jsPDF }) => {
+            import('jspdf-autotable').then(() => {
+                const doc = new jsPDF();
+
+                doc.setFontSize(22);
+                doc.text('INVOICE', 14, 20);
+
+                doc.setFontSize(12);
+                doc.text(`Invoice Number: ${invoice.invoiceNumber}`, 14, 30);
+                doc.text(`Customer: ${invoice.customerName}`, 14, 38);
+                doc.text(`Issue Date: ${new Date(invoice.issueDate).toLocaleDateString()}`, 14, 46);
+                doc.text(`Due Date: ${new Date(invoice.dueDate).toLocaleDateString()}`, 14, 54);
+
+                const tableColumn = ["Description", "Quantity", "Unit Price", "Total"];
+                const tableRows = [];
+
+                invoice.lineItems.forEach(item => {
+                    tableRows.push([
+                        item.description,
+                        item.quantity,
+                        item.unitPrice,
+                        item.lineTotal
+                    ]);
+                });
+
+                doc.autoTable({
+                    startY: 65,
+                    head: [tableColumn],
+                    body: tableRows,
+                });
+
+                const finalY = doc.lastAutoTable.finalY || 65;
+                doc.text(`Total amount: ${invoice.total}`, 14, finalY + 15);
+                doc.text(`Amount paid: ${invoice.amountPaid}`, 14, finalY + 23);
+                doc.text(`Balance Due: ${invoice.balanceDue}`, 14, finalY + 31);
+
+                doc.save(`invoice_${invoice.invoiceNumber}.pdf`);
+            });
+        });
+    };
+
     return (
         <div className="page-fade-in mt-20">
-            <InvoiceHeader invoice={invoice} onArchive={handleArchive} onRestore={handleRestore} />
+            <InvoiceHeader invoice={invoice} onArchive={handleArchive} onRestore={handleRestore} onDownload={handleDownload} />
 
             <div className="grid-layout">
                 <div className="main-content">

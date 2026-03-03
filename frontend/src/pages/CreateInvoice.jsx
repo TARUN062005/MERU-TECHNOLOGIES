@@ -11,10 +11,10 @@ const CreateInvoice = () => {
     const { addNotification } = useNotification();
 
     const [formData, setFormData] = useState({
-        invoiceNumber: '',
+        invoiceNumber: `INV-${Math.floor(Date.now() / 1000)}`,
         customerName: '',
         address: '',
-        issueDate: '',
+        issueDate: new Date().toISOString().split('T')[0],
         dueDate: '',
         currency: 'USD',
         initialLines: []

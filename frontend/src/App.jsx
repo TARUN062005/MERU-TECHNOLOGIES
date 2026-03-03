@@ -8,6 +8,8 @@ import CreateInvoice from './pages/CreateInvoice';
 import InvoiceDetail from './pages/InvoiceDetail';
 import Settings from './pages/Settings';
 import HelpCenter from './pages/HelpCenter';
+import Reports from './pages/Reports';
+import Transactions from './pages/Transactions';
 import EmptyState from './components/common/EmptyState';
 import './styles/index.css';
 
@@ -21,6 +23,8 @@ const App = () => {
                         <Route path="/invoices" element={<InvoicesList />} />
                         <Route path="/invoices/create" element={<CreateInvoice />} />
                         <Route path="/invoices/:id" element={<InvoiceDetail />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/transactions" element={<Transactions />} />
                         <Route path="/settings" element={<Settings />} />
                         <Route path="/help" element={<HelpCenter />} />
                         <Route path="*" element={<EmptyState message="Page Not Found" />} />

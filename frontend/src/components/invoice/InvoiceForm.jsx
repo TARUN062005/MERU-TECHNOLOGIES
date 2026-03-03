@@ -122,8 +122,20 @@ const InvoiceForm = ({ formData, setFormData, onSave, isSaving }) => {
 
                 <div className="flex-end mt-20 gap-10">
                     <Button variant="secondary" onClick={() => window.history.back()} type="button">Cancel</Button>
-                    <Button type="submit" variant="primary" disabled={isSaving || formData.initialLines.length === 0}>
-                        {isSaving ? 'Saving...' : 'Save Invoice'}
+                    <Button
+                        variant="secondary"
+                        type="button"
+                        onClick={handleSubmit}
+                        disabled={isSaving}
+                    >
+                        {isSaving ? 'Saving...' : 'Save as Draft'}
+                    </Button>
+                    <Button
+                        type="submit"
+                        variant="primary"
+                        disabled={isSaving || formData.initialLines.length === 0}
+                    >
+                        {isSaving ? 'Saving...' : 'Save & Send'}
                     </Button>
                 </div>
             </form>

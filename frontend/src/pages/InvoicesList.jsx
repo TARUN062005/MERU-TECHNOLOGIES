@@ -6,6 +6,8 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { format } from 'date-fns';
 import { Search, Filter, Download, MoreVertical } from 'lucide-react';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const InvoicesList = () => {
     const navigate = useNavigate();
@@ -17,16 +19,50 @@ const InvoicesList = () => {
     const currentTab = searchParams.get('status') || 'All';
     const currentSearch = searchParams.get('search') || '';
 
-    const tabs = ['All', 'Draft', 'Unpaid', 'Pending', 'Failed', 'Success'];
+    const tabs = ['All', 'Draft', 'Pending', 'Failed', 'Success'];
 
     const fetchInvoices = useCallback(async () => {
         setLoading(true);
         try {
+            // Fetch everything and filter logically on frontend to handle complex states
             const data = await getInvoices({
-                status: currentTab,
+                status: 'All',
                 search: currentSearch
             });
-            setInvoices(data);
+
+            const now = new Date();
+
+            // Map true semantic statuses locally for the table
+            const modeledData = data.map(inv => {
+                let computedStatus = inv.status;
+                if (inv.status === 'PAID') computedStatus = 'SUCCESS';
+                else if (new Date(inv.dueDate) < now) computedStatus = 'FAILED';
+                else computedStatus = (inv.balanceDue > 0 && inv.status !== 'DRAFT') ? 'PENDING' : 'DRAFT';
+                // Assuming DRAFT remains DRAFT until sent (or partially paid). Unpaid = PENDING
+                // For simplicity keeping the user's explicit filter bounds:
+                if (inv.status !== 'PAID') {
+                    if (new Date(inv.dueDate) < now) computedStatus = 'FAILED';
+                    else if (inv.amountPaid > 0) computedStatus = 'PENDING';
+                    else computedStatus = 'DRAFT';
+                }
+
+                // But user mentioned "when i click pending it should show all the unpaid invoices"
+                return { ...inv, computedStatus };
+            });
+
+            let filtered = modeledData;
+
+            if (currentTab === 'Pending') {
+                filtered = modeledData.filter(inv => inv.balanceDue > 0 && inv.computedStatus !== 'FAILED');
+            } else if (currentTab === 'Failed') {
+                filtered = modeledData.filter(inv => inv.computedStatus === 'FAILED');
+            } else if (currentTab === 'Success') {
+                filtered = modeledData.filter(inv => inv.computedStatus === 'SUCCESS');
+            } else if (currentTab === 'Draft') {
+                filtered = modeledData.filter(inv => inv.computedStatus === 'DRAFT');
+            }
+
+            setInvoices(filtered);
         } catch (err) {
             console.error('Failed to fetch invoices', err);
         } finally {
@@ -57,20 +93,57 @@ const InvoicesList = () => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount || 0);
     };
 
+    const handleDownload = () => {
+        const doc = new jsPDF();
+
+        doc.text(`Invoices Report (${currentTab})`, 14, 15);
+
+        const tableColumn = ["Invoice #", "Client", "Issue Date", "Due Date", "Amount", "Status"];
+        const tableRows = [];
+
+        invoices.forEach(inv => {
+            const invoiceData = [
+                inv.invoiceNumber,
+                inv.customerName,
+                format(new Date(inv.issueDate), 'MMM dd, yyyy'),
+                format(new Date(inv.dueDate), 'MMM dd, yyyy'),
+                formatCurrency(inv.total, inv.currency),
+                inv.computedStatus
+            ];
+            tableRows.push(invoiceData);
+        });
+
+        doc.autoTable({
+            head: [tableColumn],
+            body: tableRows,
+            startY: 20,
+            theme: 'grid',
+            styles: { fontSize: 8 },
+            headStyles: { fillColor: [79, 70, 229] }
+        });
+
+        doc.save(`invoices_${currentTab.toLowerCase()}_${format(new Date(), 'yyyyMMdd')}.pdf`);
+    };
+
     return (
         <div className="mt-20">
-            <div className="flex-between mb-20">
+            <div className="flex-between mb-20" style={{ alignItems: 'center' }}>
                 <div>
                     <h1 className="section-title text-large m-0">Invoices</h1>
                 </div>
-                <div className="flex-align-center gap-10">
-                    <Button variant="secondary"><Download size={16} /> Download</Button>
-                    <Button onClick={() => navigate('/invoices/create')} variant="primary">Create Invoice</Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'nowrap' }}>
+                    <Button variant="secondary" onClick={handleDownload} style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                        <Download size={16} />
+                        <span>Download List</span>
+                    </Button>
+                    <Button onClick={() => navigate('/invoices/create')} variant="primary" style={{ display: 'flex', alignItems: 'center', gap: '8px', whiteSpace: 'nowrap' }}>
+                        <span>+ Create Invoice</span>
+                    </Button>
                 </div>
             </div>
 
-            <Card className="p-0">
-                <div className="filter-tabs" style={{ padding: '1rem 1.5rem 0', marginBottom: 0 }}>
+            <Card className="p-0 border-0">
+                <div className="filter-tabs" style={{ padding: '1rem 1.5rem 0', marginBottom: 0, overflowX: 'auto', whiteSpace: 'nowrap' }}>
                     {tabs.map(tab => (
                         <div
                             key={tab}
@@ -82,8 +155,8 @@ const InvoicesList = () => {
                     ))}
                 </div>
 
-                <div className="flex-between" style={{ padding: '1.5rem' }}>
-                    <div className="search-box">
+                <div className="flex-between" style={{ padding: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div className="search-box" style={{ maxWidth: '350px' }}>
                         <Search size={18} className="text-muted" />
                         <input
                             type="text"
@@ -92,33 +165,29 @@ const InvoicesList = () => {
                             onChange={handleSearch}
                         />
                     </div>
-                    <div>
-                        <Button variant="secondary"><Filter size={16} /> Filter</Button>
-                    </div>
                 </div>
 
                 <div className="table-responsive">
                     <table className="data-table">
                         <thead>
                             <tr>
-                                <th><input type="checkbox" className="custom-checkbox" /></th>
+                                <th style={{ width: '40px' }}><input type="checkbox" className="custom-checkbox" /></th>
                                 <th>Invoice Number</th>
                                 <th>Client</th>
                                 <th>Created Date</th>
                                 <th>Amount</th>
-                                <th>Last Updated</th>
+                                <th>Due Date</th>
                                 <th>Status</th>
-                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {loading ? (
                                 <tr>
-                                    <td colSpan="8" className="text-center pt-10 pb-10">Loading...</td>
+                                    <td colSpan="7" className="text-center pt-10 pb-10">Loading...</td>
                                 </tr>
                             ) : invoices.length === 0 ? (
                                 <tr>
-                                    <td colSpan="8" className="text-center pt-10 pb-10 text-muted">No invoices found</td>
+                                    <td colSpan="7" className="text-center pt-10 pb-10 text-muted">No invoices found.</td>
                                 </tr>
                             ) : (
                                 invoices.map(inv => (
@@ -130,10 +199,7 @@ const InvoicesList = () => {
                                         <td className="text-strong">{formatCurrency(inv.total, inv.currency)}</td>
                                         <td>{format(new Date(inv.dueDate), 'MMM dd, yyyy')}</td>
                                         <td>
-                                            <Badge status={inv.status} />
-                                        </td>
-                                        <td className="text-right" onClick={e => e.stopPropagation()}>
-                                            <MoreVertical size={18} className="text-muted" style={{ cursor: 'pointer' }} />
+                                            <Badge status={inv.computedStatus} />
                                         </td>
                                     </tr>
                                 ))
@@ -142,11 +208,13 @@ const InvoicesList = () => {
                     </table>
                 </div>
 
-                <div className="pagination" style={{ padding: '1.5rem' }}>
-                    <span className="text-muted mr-10" style={{ marginRight: 'auto', fontSize: '0.85rem' }}>Showing 1 to {invoices.length} of {invoices.length} entries</span>
-                    <button className="page-btn">Previous</button>
-                    <button className="page-btn active">1</button>
-                    <button className="page-btn">Next</button>
+                <div className="pagination flex-between" style={{ padding: '1rem 1.5rem', borderTop: '1px solid var(--border)' }}>
+                    <span className="text-muted text-small text-strong">Showing 1 to {invoices.length} of {invoices.length} entries</span>
+                    <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button className="page-btn">Previous</button>
+                        <button className="page-btn active">1</button>
+                        <button className="page-btn">Next</button>
+                    </div>
                 </div>
             </Card>
         </div>
