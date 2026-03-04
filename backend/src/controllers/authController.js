@@ -76,6 +76,8 @@ exports.login = async (req, res) => {
                 _id: user.id,
                 name: user.name,
                 email: user.email,
+                phone: user.phone,
+                avatarUrl: user.avatarUrl,
                 isVerified: user.isVerified,
                 googleId: user.googleId,
                 token: generateToken(user._id)
@@ -136,6 +138,7 @@ exports.googleLogin = async (req, res) => {
             _id: user.id,
             name: user.name,
             email: user.email,
+            phone: user.phone,
             avatarUrl: user.avatarUrl,
             isVerified: user.isVerified,
             googleId: user.googleId,

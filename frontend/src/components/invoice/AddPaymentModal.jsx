@@ -3,7 +3,7 @@ import Modal from '../common/Modal';
 import InputField from '../common/InputField';
 import Button from '../common/Button';
 
-const AddPaymentModal = ({ isOpen, onClose, balanceDue, onSubmit }) => {
+const AddPaymentModal = ({ isOpen, onClose, balanceDue, onSubmit, currency }) => {
     const [amount, setAmount] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false); // This line was intended to be highlighted, not changed.
@@ -20,7 +20,7 @@ const AddPaymentModal = ({ isOpen, onClose, balanceDue, onSubmit }) => {
         }
 
         if (paymentAmount > balanceDue) {
-            setError(`Cannot exceed balance due ($${balanceDue.toFixed(2)})`);
+            setError(`Cannot exceed balance due (${balanceDue.toFixed(2)} ${currency || 'USD'})`);
             return;
         }
 
@@ -39,10 +39,10 @@ const AddPaymentModal = ({ isOpen, onClose, balanceDue, onSubmit }) => {
     return (
         <Modal isOpen={isOpen} onClose={onClose} title="Add Payment">
             <form onSubmit={handleSubmit} className="payment-form">
-                <p className="mb-15 text-muted">Remaining Balance: <strong>${balanceDue?.toFixed(2)}</strong></p>
+                <p className="mb-15 text-muted">Remaining Balance: <strong>{balanceDue?.toFixed(2)} {currency || 'USD'}</strong></p>
 
                 <InputField
-                    label="Payment Amount ($)"
+                    label={`Payment Amount (${currency || 'USD'})`}
                     type="number"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}

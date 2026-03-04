@@ -165,6 +165,7 @@ const InvoiceDetail = () => {
                 onClose={() => setPaymentModalOpen(false)}
                 balanceDue={invoice.balanceDue}
                 onSubmit={handleAddPayment}
+                currency={invoice.currency}
             />
 
             <AddLineItemModal

@@ -11,6 +11,8 @@ const Settings = () => {
     const { user, verifyEmail, resendVerification, changePassword, updateProfile } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
 
+    const [isEditingProfile, setIsEditingProfile] = useState(false);
+
     // Profile states
     const [firstName, setFirstName] = useState(user?.name?.split(' ')[0] || '');
     const [lastName, setLastName] = useState(user?.name?.split(' ').slice(1).join(' ') || '');
@@ -50,6 +52,7 @@ const Settings = () => {
                     phone,
                     avatarUrl
                 });
+                setIsEditingProfile(false);
             } catch (err) {
                 // error handled in context
             } finally {
@@ -146,7 +149,14 @@ const Settings = () => {
                     <form onSubmit={handleSave}>
                         {activeTab === 'profile' && (
                             <div className="settings-section">
-                                <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Profile Settings</h2>
+                                <div className="flex-between align-center mb-30 pb-15" style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                    <h2 className="section-title text-large m-0">Profile Settings</h2>
+                                    {!isEditingProfile && (
+                                        <Button variant="secondary" type="button" onClick={() => setIsEditingProfile(true)}>
+                                            Edit Profile
+                                        </Button>
+                                    )}
+                                </div>
                                 <div className="flex-align-center gap-15" style={{ marginBottom: '30px' }}>
                                     <div className="user-avatar shadow-sm" style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', color: '#fff', fontSize: '28px', fontWeight: 'bold', borderRadius: '50%', overflow: 'hidden' }}>
                                         {avatarUrl || user?.avatarUrl ? (
@@ -156,9 +166,11 @@ const Settings = () => {
                                         )}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '250px' }}>
-                                        <div className="input-group m-0">
-                                            <input type="text" className="input-field" placeholder="Paste Avatar URL" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
-                                        </div>
+                                        {isEditingProfile && (
+                                            <div className="input-group m-0">
+                                                <input type="text" className="input-field" placeholder="Paste Avatar URL" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+                                            </div>
+                                        )}
                                         {!user?.isVerified ? (
                                             <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
                                                 <Button
@@ -188,15 +200,15 @@ const Settings = () => {
                                     </div>
                                 </div>
                                 <div className="grid-2 mb-20 gap-20">
-                                    <InputField label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-                                    <InputField label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+                                    <InputField label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} readOnly={!isEditingProfile} />
+                                    <InputField label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} readOnly={!isEditingProfile} />
                                 </div>
                                 <div className="mb-20">
                                     <InputField label="Email Address" type="email" value={user?.email || ''} readOnly style={{ backgroundColor: 'var(--bg-lite)' }} />
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 5px' }}>Email address cannot be changed directly.</div>
+                                    {isEditingProfile && <div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 5px' }}>Email address cannot be changed directly.</div>}
                                 </div>
                                 <div className="mb-20">
-                                    <InputField label="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+                                    <InputField label="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} readOnly={!isEditingProfile} />
                                 </div>
                             </div>
                         )}
@@ -278,7 +290,9 @@ const Settings = () => {
                         )}
 
                         <div className="mt-20 pt-20 border-top flex-end">
-                            <Button type="submit" variant="primary" disabled={loadingProfile}>{loadingProfile ? 'Saving...' : 'Save Changes'}</Button>
+                            {activeTab === 'profile' && !isEditingProfile ? null : (
+                                <Button type="submit" variant="primary" disabled={loadingProfile}>{loadingProfile ? 'Saving...' : 'Save Changes'}</Button>
+                            )}
                         </div>
                     </form>
                 </Card>
