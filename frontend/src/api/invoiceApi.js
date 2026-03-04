@@ -34,3 +34,13 @@ export const restoreInvoice = async (id) => {
     const response = await axiosInstance.post(`/invoices/${id}/restore`);
     return response.data;
 };
+
+export const deleteInvoice = async (id) => {
+    const response = await axiosInstance.delete(`/invoices/${id}`);
+    return response.data;
+};
+
+export const sendInvoice = async (id) => {
+    const response = await axiosInstance.post(`/invoices/${id}/send`);
+    return response.data;
+};

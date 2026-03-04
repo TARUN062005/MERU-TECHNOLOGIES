@@ -63,6 +63,24 @@ const restoreInvoice = async (req, res, next) => {
     }
 };
 
+const deleteInvoice = async (req, res, next) => {
+    try {
+        await invoiceService.deleteInvoice(req.params.id, req.user.id);
+        res.json({ success: true });
+    } catch (err) {
+        next(err);
+    }
+};
+
+const sendInvoice = async (req, res, next) => {
+    try {
+        const data = await invoiceService.sendInvoice(req.params.id, req.user.id);
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+};
+
 module.exports = {
     createInvoice,
     getAllInvoices,
@@ -70,5 +88,7 @@ module.exports = {
     addLineItem,
     addPayment,
     archiveInvoice,
-    restoreInvoice
+    restoreInvoice,
+    deleteInvoice,
+    sendInvoice
 };

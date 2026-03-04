@@ -47,5 +47,16 @@ export const useInvoice = (id) => {
         return updated;
     };
 
-    return { invoice, loading, error, refresh: fetchInvoice, addLineItem, addPayment, archive, restore };
+    const send = async () => {
+        const updated = await api.sendInvoice(id);
+        setInvoice(updated);
+        return updated;
+    };
+
+    const remove = async () => {
+        const success = await api.deleteInvoice(id);
+        return success;
+    };
+
+    return { invoice, loading, error, refresh: fetchInvoice, addLineItem, addPayment, archive, restore, send, remove };
 };

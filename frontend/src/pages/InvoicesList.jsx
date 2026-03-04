@@ -6,8 +6,8 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import { format } from 'date-fns';
 import { Search, Filter, Download, MoreVertical } from 'lucide-react';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 const InvoicesList = () => {
     const navigate = useNavigate();
@@ -113,7 +113,7 @@ const InvoicesList = () => {
             tableRows.push(invoiceData);
         });
 
-        doc.autoTable({
+        autoTable(doc, {
             head: [tableColumn],
             body: tableRows,
             startY: 20,

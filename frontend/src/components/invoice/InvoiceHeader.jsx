@@ -4,9 +4,9 @@ import Badge from '../common/Badge';
 import Card from '../common/Card';
 import Button from '../common/Button';
 import { currencies } from '../currency/CurrencySelector';
-import { Archive, RotateCcw, Download } from 'lucide-react';
+import { Archive, RotateCcw, Download, Send, Trash2 } from 'lucide-react';
 
-const InvoiceHeader = ({ invoice, onArchive, onRestore, onDownload }) => {
+const InvoiceHeader = ({ invoice, onArchive, onRestore, onDownload, onSend, onDelete }) => {
     const currencyObj = currencies.find(c => c.code === (invoice.currency || 'USD'));
 
     return (
@@ -27,6 +27,12 @@ const InvoiceHeader = ({ invoice, onArchive, onRestore, onDownload }) => {
                     )}
                     <Badge status={invoice.status} isArchived={invoice.isArchived} />
                     <Button variant="secondary" onClick={onDownload}><Download size={16} /> Download</Button>
+                    {invoice.status === 'DRAFT' && !invoice.isArchived && (
+                        <>
+                            <Button variant="primary" onClick={onSend}><Send size={16} /> Send Email</Button>
+                            <Button variant="secondary" onClick={onDelete} style={{ color: 'var(--error)' }}><Trash2 size={16} /> Delete</Button>
+                        </>
+                    )}
                     {invoice.isArchived ? (
                         <Button variant="secondary" onClick={onRestore}><RotateCcw size={16} /> Restore</Button>
                     ) : (

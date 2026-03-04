@@ -13,5 +13,7 @@ router.post('/:id/lines', invoiceController.addLineItem);
 router.post('/:id/payments', invoiceController.addPayment);
 router.post('/:id/archive', invoiceController.archiveInvoice);
 router.post('/:id/restore', invoiceController.restoreInvoice);
+router.delete('/:id', invoiceController.deleteInvoice);
+router.post('/:id/send', invoiceController.sendInvoice);
 
 module.exports = router;

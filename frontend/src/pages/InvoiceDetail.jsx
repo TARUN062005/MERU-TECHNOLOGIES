@@ -16,7 +16,8 @@ import EmptyState from '../components/common/EmptyState';
 
 const InvoiceDetail = () => {
     const { id } = useParams();
-    const { invoice, loading, error, addLineItem, addPayment, archive, restore } = useInvoice(id);
+    const navigate = useNavigate();
+    const { invoice, loading, error, addLineItem, addPayment, archive, restore, send, remove } = useInvoice(id);
     const { addNotification } = useNotification();
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
@@ -38,6 +39,19 @@ const InvoiceDetail = () => {
         addNotification('Invoice restored');
     };
 
+    const handleSend = async () => {
+        await send();
+        addNotification('Invoice sent successfully!', 'success');
+    };
+
+    const handleDelete = async () => {
+        if (window.confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
+            await remove();
+            addNotification('Invoice deleted completely.', 'success');
+            navigate('/invoices');
+        }
+    };
+
     const handleAddPayment = async (amt) => {
         await addPayment(amt);
         addNotification('Payment recorded successfully!');
@@ -49,9 +63,10 @@ const InvoiceDetail = () => {
     };
 
     const handleDownload = () => {
-        // Since we import jsPDF, let's create a dynamic invoice doc
-        import('jspdf').then(({ default: jsPDF }) => {
-            import('jspdf-autotable').then(() => {
+        import('jspdf').then((jsPDFModule) => {
+            const jsPDF = jsPDFModule.jsPDF || jsPDFModule.default;
+            import('jspdf-autotable').then((autoTableModule) => {
+                const autoTable = autoTableModule.default || autoTableModule;
                 const doc = new jsPDF();
 
                 doc.setFontSize(22);
@@ -75,13 +90,13 @@ const InvoiceDetail = () => {
                     ]);
                 });
 
-                doc.autoTable({
+                autoTable(doc, {
                     startY: 65,
                     head: [tableColumn],
                     body: tableRows,
                 });
 
-                const finalY = doc.lastAutoTable.finalY || 65;
+                const finalY = doc.lastAutoTable?.finalY || 65 + (tableRows.length * 10);
                 doc.text(`Total amount: ${invoice.total}`, 14, finalY + 15);
                 doc.text(`Amount paid: ${invoice.amountPaid}`, 14, finalY + 23);
                 doc.text(`Balance Due: ${invoice.balanceDue}`, 14, finalY + 31);
@@ -93,7 +108,14 @@ const InvoiceDetail = () => {
 
     return (
         <div className="page-fade-in mt-20">
-            <InvoiceHeader invoice={invoice} onArchive={handleArchive} onRestore={handleRestore} onDownload={handleDownload} />
+            <InvoiceHeader
+                invoice={invoice}
+                onArchive={handleArchive}
+                onRestore={handleRestore}
+                onDownload={handleDownload}
+                onSend={handleSend}
+                onDelete={handleDelete}
+            />
 
             <div className="grid-layout">
                 <div className="main-content">

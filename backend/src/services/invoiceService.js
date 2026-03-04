@@ -32,7 +32,17 @@ const createInvoice = async (data, userId) => {
         throw new Error('Missing required fields');
     }
 
-    const invoice = new Invoice({ invoiceNumber, customerName, customerEmail, issueDate, dueDate, address, currency, userId });
+    const invoice = new Invoice({
+        invoiceNumber,
+        customerName,
+        customerEmail,
+        issueDate,
+        dueDate,
+        address,
+        currency,
+        userId,
+        status: data.isDraft ? 'DRAFT' : 'PENDING'
+    });
     await invoice.save();
 
     if (initialLines && initialLines.length > 0) {
@@ -138,6 +148,45 @@ const restoreInvoice = async (id, userId) => {
     return getInvoiceResponse(id, userId);
 };
 
+const deleteInvoice = async (id, userId) => {
+    const invoice = await Invoice.findOneAndDelete({ _id: id, userId });
+    if (!invoice) throw new Error('Invoice not found');
+    await InvoiceLine.deleteMany({ invoiceId: id });
+    await Payment.deleteMany({ invoiceId: id });
+    return { success: true };
+};
+
+const sendInvoice = async (id, userId) => {
+    let invoice = await Invoice.findOne({ _id: id, userId });
+    if (!invoice) throw new Error('Invoice not found');
+
+    invoice.status = 'PENDING';
+    await invoice.save();
+
+    if (invoice.customerEmail) {
+        try {
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: invoice.customerEmail,
+                subject: `New Invoice from FinDash: ${invoice.invoiceNumber}`,
+                html: `
+                    <h2>Invoice ${invoice.invoiceNumber}</h2>
+                    <p>Dear ${invoice.customerName},</p>
+                    <p>A new invoice has been generated for you.</p>
+                    <p><strong>Total Amount:</strong> ${invoice.total} ${invoice.currency}</p>
+                    <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+                    <p>Thank you for your business!</p>
+                `
+            });
+            console.log(`📧 Invoice ${invoice.invoiceNumber} sent to ${invoice.customerEmail}`);
+        } catch (error) {
+            console.error('📧 Failed to send invoice email:', error);
+        }
+    }
+
+    return getInvoiceResponse(id, userId);
+};
+
 module.exports = {
     createInvoice,
     getAllInvoices,
@@ -145,5 +194,7 @@ module.exports = {
     addLineItem,
     addPayment,
     archiveInvoice,
-    restoreInvoice
+    restoreInvoice,
+    deleteInvoice,
+    sendInvoice
 };
