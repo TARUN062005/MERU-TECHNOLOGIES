@@ -227,7 +227,7 @@ const Settings = () => {
                         {activeTab === 'security' && (
                             <div>
                                 <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Security</h2>
-                                {user?.googleId && !user?.password ? (
+                                {user?.googleId ? (
                                     <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
                                         <p className="text-muted m-0" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 500 }}>
                                             <Shield size={20} color="var(--primary-color)" />
@@ -250,12 +250,6 @@ const Settings = () => {
                                     </div>
                                 )}
 
-                                <div className="mt-30">
-                                    <h3 className="section-title text-medium mb-15">Advanced Security</h3>
-                                    <Button variant="secondary" type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
-                                        <Key size={16} /> Enable Two-Factor Authentication
-                                    </Button>
-                                </div>
                             </div>
                         )}
 

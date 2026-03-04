@@ -1,6 +1,6 @@
 import React from 'react';
 
-const InputField = ({ label, type = 'text', name, value, onChange, required, min, step, placeholder }) => {
+const InputField = ({ label, type = 'text', name, value, defaultValue, readOnly, style, onChange, required, min, step, placeholder }) => {
     return (
         <div className="input-group">
             {label && <label>{label}</label>}
@@ -8,6 +8,9 @@ const InputField = ({ label, type = 'text', name, value, onChange, required, min
                 type={type}
                 name={name}
                 value={value}
+                defaultValue={defaultValue}
+                readOnly={readOnly}
+                style={style}
                 onChange={onChange}
                 required={required}
                 min={min}
