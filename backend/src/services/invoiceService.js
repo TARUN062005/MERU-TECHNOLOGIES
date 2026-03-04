@@ -73,19 +73,66 @@ const createInvoice = async (data, userId) => {
     }
 
     if (finalEmail && !data.isDraft) {
+
+        // Assemble Line Items HTML Table
+        let lineItemsHtml = '';
+        if (initialLines && initialLines.length > 0) {
+            lineItemsHtml = `
+                <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: sans-serif;">
+                    <thead>
+                        <tr style="border-bottom: 2px solid #ccc;">
+                            <th style="text-align: left; padding: 10px;">Item Description</th>
+                            <th style="text-align: right; padding: 10px;">Qty</th>
+                            <th style="text-align: right; padding: 10px;">Price</th>
+                            <th style="text-align: right; padding: 10px;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${initialLines.map(line => `
+                            <tr style="border-bottom: 1px solid #eee;">
+                                <td style="text-align: left; padding: 10px;">${line.description}</td>
+                                <td style="text-align: right; padding: 10px;">${line.quantity}</td>
+                                <td style="text-align: right; padding: 10px;">${line.unitPrice}</td>
+                                <td style="text-align: right; padding: 10px; font-weight: bold;">${(line.quantity * line.unitPrice).toFixed(2)}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
         try {
             await transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to: finalEmail,
                 subject: `New Invoice from FinDash: ${invoiceNumber}`,
                 html: `
-                    <h2>Invoice ${invoiceNumber}</h2>
-                    <p>Dear ${customerName},</p>
-                    <p>A new invoice has been generated for you.</p>
-                    <p><strong>Total Amount:</strong> ${invoice.total} ${currency}</p>
-                    <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
-                    <br/>
-                    <p>Thank you for your business!</p>
+                    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                        <div style="border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px;">
+                            <h1 style="color: #4f46e5; margin-bottom: 5px;">INVOICE</h1>
+                            <p style="color: #666; margin-top: 0;">#${invoiceNumber}</p>
+                        </div>
+                        <p>Dear ${customerName},</p>
+                        <p>A new invoice has been generated for you.</p>
+                        
+                        <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                            <div>
+                                <p><strong>Issue Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+                                <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+                            </div>
+                        </div>
+
+                        ${lineItemsHtml}
+
+                        <div style="text-align: right; margin-top: 20px; font-size: 1.1em;">
+                            <p><strong>Total Amount:</strong> <span style="color: #4f46e5;">${invoice.total.toFixed(2)} ${currency}</span></p>
+                        </div>
+                        
+                        <br/>
+                        <p style="text-align: center; color: #666; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px;">
+                            Thank you for your business!
+                        </p>
+                    </div>
                 `
             });
             console.log(`📧 Invoice ${invoiceNumber} sent to ${finalEmail}`);
@@ -185,21 +232,67 @@ const sendInvoice = async (id, userId) => {
         throw new Error('No valid email address found for this customer. Please include one in the address or create a new invoice.');
     }
 
+    let lineItemsHtml = '';
+    const lineItems = await InvoiceLine.find({ invoiceId: id }).lean();
+    if (lineItems && lineItems.length > 0) {
+        lineItemsHtml = `
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-family: sans-serif;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #ccc;">
+                        <th style="text-align: left; padding: 10px;">Item Description</th>
+                        <th style="text-align: right; padding: 10px;">Qty</th>
+                        <th style="text-align: right; padding: 10px;">Price</th>
+                        <th style="text-align: right; padding: 10px;">Total</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${lineItems.map(line => `
+                        <tr style="border-bottom: 1px solid #eee;">
+                            <td style="text-align: left; padding: 10px;">${line.description}</td>
+                            <td style="text-align: right; padding: 10px;">${line.quantity}</td>
+                            <td style="text-align: right; padding: 10px;">${line.unitPrice}</td>
+                            <td style="text-align: right; padding: 10px; font-weight: bold;">${(line.quantity * line.unitPrice).toFixed(2)}</td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    }
+
     try {
         await transporter.sendMail({
             from: process.env.EMAIL_USER,
             to: finalEmail,
             subject: `Invoice Update from FinDash: ${invoice.invoiceNumber}`,
             html: `
-                <h2>Invoice ${invoice.invoiceNumber}</h2>
-                <p>Dear ${invoice.customerName},</p>
-                <p>Here is the current status of your invoice.</p>
-                <p><strong>Total Amount:</strong> ${invoice.total} ${invoice.currency}</p>
-                <p><strong>Amount Paid:</strong> ${invoice.amountPaid} ${invoice.currency}</p>
-                <p><strong>Balance Remaining:</strong> ${invoice.balanceDue} ${invoice.currency}</p>
-                <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
-                <br/>
-                <p>Thank you for your business!</p>
+                 <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
+                    <div style="border-bottom: 1px solid #ccc; padding-bottom: 20px; margin-bottom: 20px;">
+                        <h1 style="color: #4f46e5; margin-bottom: 5px;">INVOICE</h1>
+                        <p style="color: #666; margin-top: 0;">#${invoice.invoiceNumber}</p>
+                    </div>
+                    <p>Dear ${invoice.customerName},</p>
+                    <p>Here is the current status of your invoice.</p>
+                    
+                    <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                        <div>
+                            <p><strong>Issue Date:</strong> ${new Date(invoice.issueDate).toLocaleDateString()}</p>
+                            <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+                        </div>
+                    </div>
+
+                    ${lineItemsHtml}
+
+                    <div style="text-align: right; margin-top: 20px; font-size: 1.1em;">
+                        <p style="margin: 5px 0;"><strong>Subtotal:</strong> ${invoice.total.toFixed(2)} ${invoice.currency}</p>
+                        <p style="margin: 5px 0; color: #2e7d32;"><strong>Amount Paid:</strong> - ${(invoice.amountPaid || 0).toFixed(2)} ${invoice.currency}</p>
+                        <p style="margin: 15px 0 5px 0; font-size: 1.25em;"><strong>Balance Remaining:</strong> <span style="color: #d32f2f;">${(invoice.balanceDue || invoice.total).toFixed(2)} ${invoice.currency}</span></p>
+                    </div>
+                    
+                    <br/>
+                    <p style="text-align: center; color: #666; font-size: 0.9em; border-top: 1px solid #eee; padding-top: 20px;">
+                        Thank you for your business!
+                    </p>
+                </div>
             `
         });
         console.log(`📧 Invoice Update ${invoice.invoiceNumber} sent to ${finalEmail}`);
