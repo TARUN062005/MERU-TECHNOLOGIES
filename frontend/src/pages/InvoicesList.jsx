@@ -37,16 +37,7 @@ const InvoicesList = () => {
                 let computedStatus = inv.status;
                 if (inv.status === 'PAID') computedStatus = 'SUCCESS';
                 else if (new Date(inv.dueDate) < now) computedStatus = 'FAILED';
-                else computedStatus = (inv.balanceDue > 0 && inv.status !== 'DRAFT') ? 'PENDING' : 'DRAFT';
-                // Assuming DRAFT remains DRAFT until sent (or partially paid). Unpaid = PENDING
-                // For simplicity keeping the user's explicit filter bounds:
-                if (inv.status !== 'PAID') {
-                    if (new Date(inv.dueDate) < now) computedStatus = 'FAILED';
-                    else if (inv.amountPaid > 0) computedStatus = 'PENDING';
-                    else computedStatus = 'DRAFT';
-                }
 
-                // But user mentioned "when i click pending it should show all the unpaid invoices"
                 return { ...inv, computedStatus };
             });
 

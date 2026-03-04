@@ -27,7 +27,7 @@ const InvoiceHeader = ({ invoice, onArchive, onRestore, onDownload, onSend, onDe
                     )}
                     <Badge status={invoice.status} isArchived={invoice.isArchived} />
                     <Button variant="secondary" onClick={onDownload}><Download size={16} /> Download</Button>
-                    {invoice.status === 'DRAFT' && !invoice.isArchived && (
+                    {!invoice.isArchived && (
                         <>
                             <Button variant="primary" onClick={onSend}><Send size={16} /> Send Email</Button>
                             <Button variant="secondary" onClick={onDelete} style={{ color: 'var(--error)' }}><Trash2 size={16} /> Delete</Button>

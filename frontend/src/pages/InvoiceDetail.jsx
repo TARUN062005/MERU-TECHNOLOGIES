@@ -40,15 +40,23 @@ const InvoiceDetail = () => {
     };
 
     const handleSend = async () => {
-        await send();
-        addNotification('Invoice sent successfully!', 'success');
+        try {
+            await send();
+            addNotification('Invoice sent successfully!', 'success');
+        } catch (err) {
+            addNotification(err.response?.data?.message || err.message || 'Failed to send invoice', 'error');
+        }
     };
 
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this invoice? This action cannot be undone.")) {
-            await remove();
-            addNotification('Invoice deleted completely.', 'success');
-            navigate('/invoices');
+            try {
+                await remove();
+                addNotification('Invoice deleted completely.', 'success');
+                navigate('/invoices');
+            } catch (err) {
+                addNotification(err.response?.data?.message || err.message || 'Failed to delete invoice', 'error');
+            }
         }
     };
 

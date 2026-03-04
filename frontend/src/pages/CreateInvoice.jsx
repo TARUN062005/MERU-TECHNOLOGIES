@@ -24,7 +24,8 @@ const CreateInvoice = () => {
 
     const { user } = useAuth();
 
-    const handleSave = async (isDraft = false) => {
+    const handleSave = async (draftOrEvent) => {
+        const isDraft = typeof draftOrEvent === 'boolean' ? draftOrEvent : false;
         if (!user?.isVerified) {
             addNotification('You must verify your email in Settings to create an invoice.', 'error');
             return;

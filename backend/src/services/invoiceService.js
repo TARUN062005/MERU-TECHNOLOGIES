@@ -66,11 +66,17 @@ const createInvoice = async (data, userId) => {
         await invoice.save();
     }
 
-    if (customerEmail && !data.isDraft) {
+    let finalEmail = customerEmail;
+    if (!finalEmail && address) {
+        const match = address.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+        if (match) finalEmail = match[0];
+    }
+
+    if (finalEmail && !data.isDraft) {
         try {
             await transporter.sendMail({
                 from: process.env.EMAIL_USER,
-                to: customerEmail,
+                to: finalEmail,
                 subject: `New Invoice from FinDash: ${invoiceNumber}`,
                 html: `
                     <h2>Invoice ${invoiceNumber}</h2>
@@ -78,10 +84,11 @@ const createInvoice = async (data, userId) => {
                     <p>A new invoice has been generated for you.</p>
                     <p><strong>Total Amount:</strong> ${invoice.total} ${currency}</p>
                     <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+                    <br/>
                     <p>Thank you for your business!</p>
                 `
             });
-            console.log(`📧 Invoice ${invoiceNumber} sent to ${customerEmail}`);
+            console.log(`📧 Invoice ${invoiceNumber} sent to ${finalEmail}`);
         } catch (error) {
             console.error('📧 Failed to send invoice email:', error);
         }
@@ -111,8 +118,11 @@ const addLineItem = async (id, data, userId) => {
 
     invoice.total = total;
     invoice.balanceDue = total - invoice.amountPaid;
-    if (invoice.balanceDue === 0 && invoice.total > 0) invoice.status = 'PAID';
-    if (invoice.balanceDue > 0) invoice.status = 'DRAFT';
+    if (invoice.balanceDue === 0 && invoice.total > 0) {
+        invoice.status = 'PAID';
+    } else if (invoice.balanceDue > 0 && invoice.status !== 'PENDING') {
+        invoice.status = 'DRAFT';
+    }
     await invoice.save();
 
     return getInvoiceResponse(id, userId);
@@ -160,28 +170,42 @@ const sendInvoice = async (id, userId) => {
     let invoice = await Invoice.findOne({ _id: id, userId });
     if (!invoice) throw new Error('Invoice not found');
 
-    invoice.status = 'PENDING';
-    await invoice.save();
+    if (invoice.status === 'DRAFT') {
+        invoice.status = 'PENDING';
+        await invoice.save();
+    }
 
-    if (invoice.customerEmail) {
-        try {
-            await transporter.sendMail({
-                from: process.env.EMAIL_USER,
-                to: invoice.customerEmail,
-                subject: `New Invoice from FinDash: ${invoice.invoiceNumber}`,
-                html: `
-                    <h2>Invoice ${invoice.invoiceNumber}</h2>
-                    <p>Dear ${invoice.customerName},</p>
-                    <p>A new invoice has been generated for you.</p>
-                    <p><strong>Total Amount:</strong> ${invoice.total} ${invoice.currency}</p>
-                    <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
-                    <p>Thank you for your business!</p>
-                `
-            });
-            console.log(`📧 Invoice ${invoice.invoiceNumber} sent to ${invoice.customerEmail}`);
-        } catch (error) {
-            console.error('📧 Failed to send invoice email:', error);
-        }
+    let finalEmail = invoice.customerEmail;
+    if (!finalEmail && invoice.address) {
+        const match = invoice.address.match(/([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+)/);
+        if (match) finalEmail = match[0];
+    }
+
+    if (!finalEmail) {
+        throw new Error('No valid email address found for this customer. Please include one in the address or create a new invoice.');
+    }
+
+    try {
+        await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: finalEmail,
+            subject: `Invoice Update from FinDash: ${invoice.invoiceNumber}`,
+            html: `
+                <h2>Invoice ${invoice.invoiceNumber}</h2>
+                <p>Dear ${invoice.customerName},</p>
+                <p>Here is the current status of your invoice.</p>
+                <p><strong>Total Amount:</strong> ${invoice.total} ${invoice.currency}</p>
+                <p><strong>Amount Paid:</strong> ${invoice.amountPaid} ${invoice.currency}</p>
+                <p><strong>Balance Remaining:</strong> ${invoice.balanceDue} ${invoice.currency}</p>
+                <p><strong>Due Date:</strong> ${new Date(invoice.dueDate).toLocaleDateString()}</p>
+                <br/>
+                <p>Thank you for your business!</p>
+            `
+        });
+        console.log(`📧 Invoice Update ${invoice.invoiceNumber} sent to ${finalEmail}`);
+    } catch (error) {
+        console.error('📧 Failed to send invoice email:', error);
+        throw new Error('Failed to send email via NodeMailer.');
     }
 
     return getInvoiceResponse(id, userId);
