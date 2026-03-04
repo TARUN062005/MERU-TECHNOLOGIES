@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../components/common/Card';
 import InputField from '../components/common/InputField';
 import Button from '../components/common/Button';
-import { User, Building, Bell, Shield, Key } from 'lucide-react';
+import { User, Building, Bell, Shield, Key, Loader } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -10,6 +10,10 @@ const Settings = () => {
     const { addNotification } = useNotification();
     const { user, verifyEmail, resendVerification, changePassword } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
+
+    // Resend email limit
+    const [resendCooldown, setResendCooldown] = useState(0);
+    const [loadingResend, setLoadingResend] = useState(false);
 
     // Password change states
     const [currentPassword, setCurrentPassword] = useState('');
@@ -35,10 +39,24 @@ const Settings = () => {
     };
 
     const handleResendVerification = async () => {
+        if (resendCooldown > 0 || loadingResend) return;
+        setLoadingResend(true);
         try {
             await resendVerification();
+            setResendCooldown(120); // 2 minutes
+            const interval = setInterval(() => {
+                setResendCooldown((prev) => {
+                    if (prev <= 1) {
+                        clearInterval(interval);
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
         } catch (error) {
             // Error managed in context
+        } finally {
+            setLoadingResend(false);
         }
     };
 
@@ -108,8 +126,12 @@ const Settings = () => {
                             <div className="settings-section">
                                 <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Profile Settings</h2>
                                 <div className="flex-align-center gap-15" style={{ marginBottom: '30px' }}>
-                                    <div className="user-avatar shadow-sm" style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', color: '#fff', fontSize: '28px', fontWeight: 'bold', borderRadius: '50%' }}>
-                                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={40} />}
+                                    <div className="user-avatar shadow-sm" style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', color: '#fff', fontSize: '28px', fontWeight: 'bold', borderRadius: '50%', overflow: 'hidden' }}>
+                                        {user?.avatarUrl ? (
+                                            <img src={user.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                                        ) : (
+                                            user?.name ? user.name.charAt(0).toUpperCase() : <User size={40} />
+                                        )}
                                     </div>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                         <Button variant="outline" type="button" style={{ width: 'fit-content' }}>Change Avatar</Button>
@@ -126,10 +148,12 @@ const Settings = () => {
                                                 <Button
                                                     variant="primary"
                                                     type="button"
+                                                    disabled={resendCooldown > 0 || loadingResend}
                                                     onClick={handleResendVerification}
-                                                    style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                    style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.1)', display: 'flex', alignItems: 'center', gap: '8px' }}
                                                 >
-                                                    Resend Verification Mail
+                                                    {loadingResend ? <Loader size={16} className="spin" /> : null}
+                                                    {resendCooldown > 0 ? `Resend Verification (${resendCooldown}s)` : 'Resend Verification Mail'}
                                                 </Button>
                                             </div>
                                         ) : (

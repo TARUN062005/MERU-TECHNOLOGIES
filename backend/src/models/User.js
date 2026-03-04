@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
     isVerified: { type: Boolean, default: false },
     googleId: { type: String },
     verificationToken: { type: String },
-    verificationTokenExpires: { type: Date }
+    verificationTokenExpires: { type: Date },
+    avatarUrl: { type: String }
 }, {
     timestamps: true
 });

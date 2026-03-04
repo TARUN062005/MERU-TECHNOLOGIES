@@ -11,7 +11,8 @@ const invoiceSchema = new mongoose.Schema({
     total: { type: Number, default: 0 },
     amountPaid: { type: Number, default: 0 },
     balanceDue: { type: Number, default: 0 },
-    isArchived: { type: Boolean, default: false }
+    isArchived: { type: Boolean, default: false },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 });
 
 module.exports = mongoose.model('Invoice', invoiceSchema);

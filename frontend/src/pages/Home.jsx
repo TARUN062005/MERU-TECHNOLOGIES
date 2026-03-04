@@ -5,9 +5,11 @@ import Button from '../components/common/Button';
 import Loader from '../components/common/Loader';
 import { BarChart2, Users, FileText, CheckCircle } from 'lucide-react';
 import { getInvoices } from '../api/invoiceApi';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
     const navigate = useNavigate();
+    const { user } = useAuth();
     const [stats, setStats] = useState({
         totalInvoices: 0,
         paidInvoices: 0,
@@ -18,6 +20,10 @@ const Home = () => {
 
     useEffect(() => {
         const fetchDashboardData = async () => {
+            if (!user || !user.isVerified) {
+                setLoading(false);
+                return;
+            }
             try {
                 const invoices = await getInvoices({});
                 const totalInvoices = invoices.length;
@@ -48,7 +54,7 @@ const Home = () => {
         };
 
         fetchDashboardData();
-    }, []);
+    }, [user]);
 
     const formatCurrency = (amount) => {
         return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount || 0);
@@ -56,9 +62,19 @@ const Home = () => {
 
     if (loading) return <Loader />;
 
+    if (!user?.isVerified) {
+        return (
+            <div className="mt-20 fade-in text-center" style={{ padding: '60px 40px', background: 'var(--bg-lite)', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                <h1 className="section-title text-large">Welcome, {user?.name?.split(' ')[0]}!</h1>
+                <p className="text-muted mt-20" style={{ fontSize: '1.2rem', maxWidth: '600px', margin: '20px auto' }}>Please check your inbox to verify your email address. You need to be verified to create and manage your invoices.</p>
+                <Button onClick={() => navigate('/settings')} className="mt-20">Go to Settings to Verify</Button>
+            </div>
+        );
+    }
+
     return (
-        <div className="mt-20">
-            <h1 className="section-title mb-20 text-large">Dashboard</h1>
+        <div className="mt-20 fade-in">
+            <h1 className="section-title mb-20 text-large">Welcome, {user?.name?.split(' ')[0]}!</h1>
             <div className="grid-2 dashboard-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
                 <Card className="text-center p-40 flex-align-center" style={{ flexDirection: 'column', gap: '10px' }}>
                     <FileText size={32} className="text-primary" />

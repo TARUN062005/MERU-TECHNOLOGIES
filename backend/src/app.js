@@ -9,21 +9,22 @@ app.use(express.json());
 const Notification = require('./models/Notification');
 
 const authRoutes = require('./routes/authRoutes');
+const { protect } = require('./middleware/authMiddleware');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/invoices', invoiceRoutes);
 
 // Simple notification routes
-app.get('/api/notifications', async (req, res) => {
-    const notes = await Notification.find().sort({ createdAt: -1 }).limit(50);
+app.get('/api/notifications', protect, async (req, res) => {
+    const notes = await Notification.find({ userId: req.user.id }).sort({ createdAt: -1 }).limit(50);
     res.json(notes);
 });
-app.post('/api/notifications', async (req, res) => {
-    const note = await Notification.create(req.body);
+app.post('/api/notifications', protect, async (req, res) => {
+    const note = await Notification.create({ ...req.body, userId: req.user.id });
     res.json(note);
 });
-app.post('/api/notifications/read', async (req, res) => {
-    await Notification.updateMany({ isRead: false }, { isRead: true });
+app.post('/api/notifications/read', protect, async (req, res) => {
+    await Notification.updateMany({ userId: req.user.id, isRead: false }, { isRead: true });
     res.json({ success: true });
 });
 

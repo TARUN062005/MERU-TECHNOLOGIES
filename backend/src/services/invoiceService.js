@@ -2,16 +2,16 @@ const Invoice = require('../models/Invoice');
 const InvoiceLine = require('../models/InvoiceLine');
 const Payment = require('../models/Payment');
 
-const getInvoiceResponse = async (id) => {
-    const invoice = await Invoice.findById(id).lean();
+const getInvoiceResponse = async (id, userId) => {
+    const invoice = await Invoice.findOne({ _id: id, userId }).lean();
     if (!invoice) throw new Error('Invoice not found');
     const lineItems = await InvoiceLine.find({ invoiceId: id }).lean();
     const payments = await Payment.find({ invoiceId: id }).lean();
     return { ...invoice, lineItems, payments };
 };
 
-const getAllInvoices = async (query = {}) => {
-    const filter = {};
+const getAllInvoices = async (query = {}, userId) => {
+    const filter = { userId };
     if (query.status && query.status !== 'All') {
         filter.status = query.status.toUpperCase();
     }
@@ -25,13 +25,13 @@ const getAllInvoices = async (query = {}) => {
     return invoices;
 };
 
-const createInvoice = async (data) => {
+const createInvoice = async (data, userId) => {
     const { invoiceNumber, customerName, issueDate, dueDate, initialLines, address, currency } = data;
     if (!invoiceNumber || !customerName || !issueDate || !dueDate) {
         throw new Error('Missing required fields');
     }
 
-    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate, address, currency });
+    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate, address, currency, userId });
     await invoice.save();
 
     if (initialLines && initialLines.length > 0) {
@@ -55,15 +55,15 @@ const createInvoice = async (data) => {
         await invoice.save();
     }
 
-    return getInvoiceResponse(invoice._id);
+    return getInvoiceResponse(invoice._id, userId);
 };
 
-const getInvoice = async (id) => {
-    return getInvoiceResponse(id);
+const getInvoice = async (id, userId) => {
+    return getInvoiceResponse(id, userId);
 };
 
-const addLineItem = async (id, data) => {
-    const invoice = await Invoice.findById(id);
+const addLineItem = async (id, data, userId) => {
+    const invoice = await Invoice.findOne({ _id: id, userId });
     if (!invoice) throw new Error('Invoice not found');
 
     const { description, quantity, unitPrice } = data;
@@ -83,12 +83,12 @@ const addLineItem = async (id, data) => {
     if (invoice.balanceDue > 0) invoice.status = 'DRAFT';
     await invoice.save();
 
-    return getInvoiceResponse(id);
+    return getInvoiceResponse(id, userId);
 };
 
-const addPayment = async (id, amount) => {
+const addPayment = async (id, amount, userId) => {
     if (amount <= 0) throw new Error('Payment amount must be greater than zero');
-    const invoice = await Invoice.findById(id);
+    const invoice = await Invoice.findOne({ _id: id, userId });
     if (!invoice) throw new Error('Invoice not found');
 
     if (amount > invoice.balanceDue) throw new Error('Payment exceeds balance due');
@@ -101,19 +101,19 @@ const addPayment = async (id, amount) => {
     if (invoice.balanceDue === 0) invoice.status = 'PAID';
     await invoice.save();
 
-    return getInvoiceResponse(id);
+    return getInvoiceResponse(id, userId);
 };
 
-const archiveInvoice = async (id) => {
-    const invoice = await Invoice.findByIdAndUpdate(id, { isArchived: true }, { new: true });
+const archiveInvoice = async (id, userId) => {
+    const invoice = await Invoice.findOneAndUpdate({ _id: id, userId }, { isArchived: true }, { new: true });
     if (!invoice) throw new Error('Invoice not found');
-    return getInvoiceResponse(id);
+    return getInvoiceResponse(id, userId);
 };
 
-const restoreInvoice = async (id) => {
-    const invoice = await Invoice.findByIdAndUpdate(id, { isArchived: false }, { new: true });
+const restoreInvoice = async (id, userId) => {
+    const invoice = await Invoice.findOneAndUpdate({ _id: id, userId }, { isArchived: false }, { new: true });
     if (!invoice) throw new Error('Invoice not found');
-    return getInvoiceResponse(id);
+    return getInvoiceResponse(id, userId);
 };
 
 module.exports = {

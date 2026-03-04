@@ -6,7 +6,9 @@ const nodemailer = require('nodemailer');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const transporter = nodemailer.createTransport({
-    service: 'Gmail', // or another service based on user's preference
+    host: 'smtp.gmail.com',
+    port: 465, // SSL
+    secure: true,
     auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
@@ -111,7 +113,7 @@ exports.googleLogin = async (req, res) => {
             audience: process.env.GOOGLE_CLIENT_ID
         });
 
-        const { name, email, sub } = ticket.getPayload();
+        const { name, email, sub, picture } = ticket.getPayload();
 
         let user = await User.findOne({ email });
 
@@ -120,10 +122,12 @@ exports.googleLogin = async (req, res) => {
                 name,
                 email,
                 googleId: sub,
+                avatarUrl: picture,
                 isVerified: true // Google logins are auto-verified
             });
-        } else if (!user.isVerified) {
-            user.isVerified = true;
+        } else {
+            if (!user.isVerified) user.isVerified = true;
+            if (picture && !user.avatarUrl) user.avatarUrl = picture;
             await user.save();
         }
 
@@ -131,6 +135,7 @@ exports.googleLogin = async (req, res) => {
             _id: user.id,
             name: user.name,
             email: user.email,
+            avatarUrl: user.avatarUrl,
             isVerified: user.isVerified,
             token: generateToken(user._id)
         });
