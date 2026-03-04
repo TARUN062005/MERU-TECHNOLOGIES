@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Card from '../components/common/Card';
 import InputField from '../components/common/InputField';
@@ -9,20 +9,17 @@ import { Zap } from 'lucide-react';
 
 const Login = () => {
     const navigate = useNavigate();
-    const location = useLocation();
     const { loginUser, googleLogin, user } = useAuth();
 
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const from = location.state?.from?.pathname || "/dashboard";
-
     useEffect(() => {
         if (user) {
-            navigate(from, { replace: true });
+            navigate('/dashboard', { replace: true });
         }
-    }, [user, navigate, from]);
+    }, [user, navigate]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();

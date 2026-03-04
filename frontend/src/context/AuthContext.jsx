@@ -1,14 +1,61 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import axiosInstance from '../api/axiosInstance';
 import { useNotification } from './NotificationContext';
 import { jwtDecode } from 'jwt-decode';
 
 const AuthContext = createContext();
 
+// Session timeout in milliseconds (15 minutes)
+const SESSION_TIMEOUT = 15 * 60 * 1000;
+// Inactivity check interval (1 minute)
+const INACTIVITY_CHECK_INTERVAL = 60 * 1000;
+
 export const AuthProvider = ({ children }) => {
     const { addNotification } = useNotification();
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
+    const sessionTimerRef = useRef(null);
+    const inactivityTimerRef = useRef(null);
+    const lastActivityRef = useRef(Date.now());
+
+    // Track user activity
+    const updateActivity = () => {
+        lastActivityRef.current = Date.now();
+    };
+
+    // Clear all timers
+    const clearSessionTimers = () => {
+        if (sessionTimerRef.current) {
+            clearTimeout(sessionTimerRef.current);
+        }
+        if (inactivityTimerRef.current) {
+            clearInterval(inactivityTimerRef.current);
+        }
+    };
+
+    // Set up session timeout
+    const setupSessionTimeout = () => {
+        clearSessionTimers();
+        lastActivityRef.current = Date.now();
+
+        // Check for inactivity periodically
+        inactivityTimerRef.current = setInterval(() => {
+            const timeSinceLastActivity = Date.now() - lastActivityRef.current;
+            if (timeSinceLastActivity > SESSION_TIMEOUT) {
+                addNotification('Session expired due to inactivity. Please login again.', 'warning');
+                logoutInternal();
+            }
+        }, INACTIVITY_CHECK_INTERVAL);
+    };
+
+    // Internal logout without notification
+    const logoutInternal = () => {
+        clearSessionTimers();
+        localStorage.removeItem('userInfo');
+        localStorage.removeItem('sessionStartTime');
+        localStorage.removeItem('lastActivityTime');
+        setUser(null);
+    };
 
     useEffect(() => {
         const storedUser = localStorage.getItem('userInfo');
@@ -17,15 +64,29 @@ export const AuthProvider = ({ children }) => {
                 const parsedUser = JSON.parse(storedUser);
                 const decoded = jwtDecode(parsedUser.token);
                 if (decoded.exp * 1000 < Date.now()) {
-                    logout();
+                    logoutInternal();
                 } else {
                     setUser(parsedUser);
+                    setupSessionTimeout();
                 }
             } catch (err) {
-                logout();
+                logoutInternal();
             }
         }
         setLoading(false);
+
+        // Add event listeners for user activity
+        const activityEvents = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
+        activityEvents.forEach(event => {
+            window.addEventListener(event, updateActivity, true);
+        });
+
+        return () => {
+            activityEvents.forEach(event => {
+                window.removeEventListener(event, updateActivity, true);
+            });
+            clearSessionTimers();
+        };
     }, []);
 
     const registerUser = async (name, email, password) => {
@@ -44,7 +105,10 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data } = await axiosInstance.post('/auth/login', { email, password });
             localStorage.setItem('userInfo', JSON.stringify(data));
+            localStorage.setItem('sessionStartTime', Date.now().toString());
+            localStorage.setItem('lastActivityTime', Date.now().toString());
             setUser(data);
+            setupSessionTimeout();
             addNotification('Logged in successfully!', 'success');
             return data;
         } catch (error) {
@@ -73,7 +137,10 @@ export const AuthProvider = ({ children }) => {
         try {
             const { data } = await axiosInstance.post('/auth/google', { token });
             localStorage.setItem('userInfo', JSON.stringify(data));
+            localStorage.setItem('sessionStartTime', Date.now().toString());
+            localStorage.setItem('lastActivityTime', Date.now().toString());
             setUser(data);
+            setupSessionTimeout();
             addNotification('Logged in with Google!', 'success');
             return data;
         } catch (error) {
@@ -118,8 +185,12 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = () => {
+        clearSessionTimers();
         localStorage.removeItem('userInfo');
+        localStorage.removeItem('sessionStartTime');
+        localStorage.removeItem('lastActivityTime');
         setUser(null);
+        addNotification('Logged out successfully!', 'success');
     };
 
     return (
