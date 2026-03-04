@@ -5,7 +5,7 @@ const { OAuth2Client } = require('google-auth-library');
 const nodemailer = require('nodemailer');
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-const transporter = nodemailer.createTransport({
+exports.transporter = nodemailer.createTransport({
     host: 'smtp.gmail.com',
     port: 465, // SSL
     secure: true,
@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-transporter.verify().then(() => {
+exports.transporter.verify().then(() => {
     console.log('📧 Nodemailer connected successfully to email server');
 }).catch((error) => {
     console.error('📧 Nodemailer connection error:', error);
@@ -47,7 +47,7 @@ exports.register = async (req, res) => {
         const verificationUrl = `http://localhost:5173/settings`; // Pointing to settings to simulate
 
         try {
-            await transporter.sendMail({
+            await exports.transporter.sendMail({
                 from: process.env.EMAIL_USER,
                 to: email,
                 subject: 'Please verify your email - FinDash',
@@ -205,6 +205,33 @@ exports.changePassword = async (req, res) => {
         await user.save();
 
         res.json({ message: 'Password changed successfully' });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+exports.updateProfile = async (req, res) => {
+    try {
+        const { name, phone, avatarUrl } = req.body;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
+
+        user.name = name || user.name;
+        user.phone = phone !== undefined ? phone : user.phone;
+        user.avatarUrl = avatarUrl !== undefined ? avatarUrl : user.avatarUrl;
+
+        await user.save();
+
+        res.json({
+            _id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            avatarUrl: user.avatarUrl,
+            isVerified: user.isVerified,
+            googleId: user.googleId,
+            token: generateToken(user._id)
+        });
     } catch (error) {
         res.status(500).json({ message: error.message });
     }

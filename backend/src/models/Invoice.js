@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const invoiceSchema = new mongoose.Schema({
     invoiceNumber: { type: String, required: true },
     customerName: { type: String, required: true },
+    customerEmail: { type: String },
     issueDate: { type: Date, required: true },
     dueDate: { type: Date, required: true },
     address: { type: String, default: '' },

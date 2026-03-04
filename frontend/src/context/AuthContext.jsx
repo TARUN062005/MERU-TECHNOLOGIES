@@ -104,13 +104,26 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const updateProfile = async (profileData) => {
+        try {
+            const { data } = await axiosInstance.put('/auth/profile', profileData);
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            setUser(data);
+            addNotification('Profile updated successfully!', 'success');
+            return data;
+        } catch (error) {
+            addNotification(error.response?.data?.message || 'Failed to update profile', 'error');
+            throw error;
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('userInfo');
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, registerUser, loginUser, logout, verifyEmail, googleLogin, resendVerification, changePassword }}>
+        <AuthContext.Provider value={{ user, loading, registerUser, loginUser, logout, verifyEmail, googleLogin, resendVerification, changePassword, updateProfile }}>
             {children}
         </AuthContext.Provider>
     );

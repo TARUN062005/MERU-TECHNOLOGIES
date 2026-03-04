@@ -1,6 +1,7 @@
 const Invoice = require('../models/Invoice');
 const InvoiceLine = require('../models/InvoiceLine');
 const Payment = require('../models/Payment');
+const { transporter } = require('../controllers/authController');
 
 const getInvoiceResponse = async (id, userId) => {
     const invoice = await Invoice.findOne({ _id: id, userId }).lean();
@@ -26,12 +27,12 @@ const getAllInvoices = async (query = {}, userId) => {
 };
 
 const createInvoice = async (data, userId) => {
-    const { invoiceNumber, customerName, issueDate, dueDate, initialLines, address, currency } = data;
+    const { invoiceNumber, customerName, customerEmail, issueDate, dueDate, initialLines, address, currency } = data;
     if (!invoiceNumber || !customerName || !issueDate || !dueDate) {
         throw new Error('Missing required fields');
     }
 
-    const invoice = new Invoice({ invoiceNumber, customerName, issueDate, dueDate, address, currency, userId });
+    const invoice = new Invoice({ invoiceNumber, customerName, customerEmail, issueDate, dueDate, address, currency, userId });
     await invoice.save();
 
     if (initialLines && initialLines.length > 0) {
@@ -53,6 +54,27 @@ const createInvoice = async (data, userId) => {
         invoice.total = total;
         invoice.balanceDue = total;
         await invoice.save();
+    }
+
+    if (customerEmail && !data.isDraft) {
+        try {
+            await transporter.sendMail({
+                from: process.env.EMAIL_USER,
+                to: customerEmail,
+                subject: `New Invoice from FinDash: ${invoiceNumber}`,
+                html: `
+                    <h2>Invoice ${invoiceNumber}</h2>
+                    <p>Dear ${customerName},</p>
+                    <p>A new invoice has been generated for you.</p>
+                    <p><strong>Total Amount:</strong> ${invoice.total} ${currency}</p>
+                    <p><strong>Due Date:</strong> ${new Date(dueDate).toLocaleDateString()}</p>
+                    <p>Thank you for your business!</p>
+                `
+            });
+            console.log(`📧 Invoice ${invoiceNumber} sent to ${customerEmail}`);
+        } catch (error) {
+            console.error('📧 Failed to send invoice email:', error);
+        }
     }
 
     return getInvoiceResponse(invoice._id, userId);

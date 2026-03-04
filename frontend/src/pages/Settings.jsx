@@ -8,8 +8,15 @@ import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
     const { addNotification } = useNotification();
-    const { user, verifyEmail, resendVerification, changePassword } = useAuth();
+    const { user, verifyEmail, resendVerification, changePassword, updateProfile } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
+
+    // Profile states
+    const [firstName, setFirstName] = useState(user?.name?.split(' ')[0] || '');
+    const [lastName, setLastName] = useState(user?.name?.split(' ').slice(1).join(' ') || '');
+    const [phone, setPhone] = useState(user?.phone || '');
+    const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+    const [loadingProfile, setLoadingProfile] = useState(false);
 
     // Resend email limit
     const [resendCooldown, setResendCooldown] = useState(0);
@@ -33,9 +40,24 @@ const Settings = () => {
         }
     };
 
-    const handleSave = (e) => {
+    const handleSave = async (e) => {
         e.preventDefault();
-        addNotification('Settings saved successfully!', 'success');
+        if (activeTab === 'profile') {
+            setLoadingProfile(true);
+            try {
+                await updateProfile({
+                    name: `${firstName} ${lastName}`.trim(),
+                    phone,
+                    avatarUrl
+                });
+            } catch (err) {
+                // error handled in context
+            } finally {
+                setLoadingProfile(false);
+            }
+        } else {
+            addNotification('Settings saved successfully!', 'success');
+        }
     };
 
     const handleResendVerification = async () => {
@@ -127,14 +149,16 @@ const Settings = () => {
                                 <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Profile Settings</h2>
                                 <div className="flex-align-center gap-15" style={{ marginBottom: '30px' }}>
                                     <div className="user-avatar shadow-sm" style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', color: '#fff', fontSize: '28px', fontWeight: 'bold', borderRadius: '50%', overflow: 'hidden' }}>
-                                        {user?.avatarUrl ? (
-                                            <img src={user.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
+                                        {avatarUrl || user?.avatarUrl ? (
+                                            <img src={avatarUrl || user.avatarUrl} alt="Avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} referrerPolicy="no-referrer" />
                                         ) : (
-                                            user?.name ? user.name.charAt(0).toUpperCase() : <User size={40} />
+                                            firstName ? firstName.charAt(0).toUpperCase() : <User size={40} />
                                         )}
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        <Button variant="outline" type="button" style={{ width: 'fit-content' }}>Change Avatar</Button>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '250px' }}>
+                                        <div className="input-group m-0">
+                                            <input type="text" className="input-field" placeholder="Paste Avatar URL" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
+                                        </div>
                                         {!user?.isVerified ? (
                                             <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
                                                 <Button
@@ -164,15 +188,15 @@ const Settings = () => {
                                     </div>
                                 </div>
                                 <div className="grid-2 mb-20 gap-20">
-                                    <InputField label="First Name" defaultValue={user?.name?.split(' ')[0] || ''} />
-                                    <InputField label="Last Name" defaultValue={user?.name?.split(' ').slice(1).join(' ') || ''} />
+                                    <InputField label="First Name" value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+                                    <InputField label="Last Name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
                                 </div>
                                 <div className="mb-20">
-                                    <InputField label="Email Address" type="email" defaultValue={user?.email || ''} readOnly style={{ backgroundColor: 'var(--bg-lite)' }} />
-                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Email address cannot be changed directly.</div>
+                                    <InputField label="Email Address" type="email" value={user?.email || ''} readOnly style={{ backgroundColor: 'var(--bg-lite)' }} />
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 5px' }}>Email address cannot be changed directly.</div>
                                 </div>
                                 <div className="mb-20">
-                                    <InputField label="Phone Number" defaultValue="+1 (555) 123-4567" />
+                                    <InputField label="Phone Number" value={phone} onChange={(e) => setPhone(e.target.value)} />
                                 </div>
                             </div>
                         )}
@@ -254,7 +278,7 @@ const Settings = () => {
                         )}
 
                         <div className="mt-20 pt-20 border-top flex-end">
-                            <Button type="submit" variant="primary">Save Changes</Button>
+                            <Button type="submit" variant="primary" disabled={loadingProfile}>{loadingProfile ? 'Saving...' : 'Save Changes'}</Button>
                         </div>
                     </form>
                 </Card>

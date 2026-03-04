@@ -14,6 +14,7 @@ const CreateInvoice = () => {
     const [formData, setFormData] = useState({
         invoiceNumber: `INV-${Math.floor(Date.now() / 1000)}`,
         customerName: '',
+        customerEmail: '',
         address: '',
         issueDate: new Date().toISOString().split('T')[0],
         dueDate: '',

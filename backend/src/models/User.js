@@ -8,7 +8,8 @@ const userSchema = new mongoose.Schema({
     googleId: { type: String },
     verificationToken: { type: String },
     verificationTokenExpires: { type: Date },
-    avatarUrl: { type: String }
+    avatarUrl: { type: String },
+    phone: { type: String }
 }, {
     timestamps: true
 });

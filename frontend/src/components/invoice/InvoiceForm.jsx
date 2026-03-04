@@ -39,9 +39,10 @@ const InvoiceForm = ({ formData, setFormData, onSave, isSaving }) => {
             <form onSubmit={handleSubmit}>
                 <Card className="mb-20">
                     <h2 className="section-title mb-15">Invoice Details</h2>
-                    <div className="grid-2 mb-15">
+                    <div className="grid-2 mb-15 gap-20">
                         <InputField label="Invoice Number" name="invoiceNumber" value={formData.invoiceNumber} onChange={handleChange} required />
                         <InputField label="Customer Name" name="customerName" value={formData.customerName} onChange={handleChange} required />
+                        <InputField label="Customer Email" type="email" name="customerEmail" value={formData.customerEmail} onChange={handleChange} placeholder="Billing email address" />
                     </div>
                     <div className="input-group">
                         <label>Client Address</label>
