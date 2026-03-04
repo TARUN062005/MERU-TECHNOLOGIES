@@ -8,8 +8,14 @@ import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
     const { addNotification } = useNotification();
-    const { user, verifyEmail } = useAuth();
+    const { user, verifyEmail, resendVerification, changePassword } = useAuth();
     const [activeTab, setActiveTab] = useState('profile');
+
+    // Password change states
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [loadingPassword, setLoadingPassword] = useState(false);
 
     const handleVerifyMock = async () => {
         // In reality, user clicks a link in their email which visits an endpoint or includes a token in URL.
@@ -28,8 +34,34 @@ const Settings = () => {
         addNotification('Settings saved successfully!', 'success');
     };
 
+    const handleResendVerification = async () => {
+        try {
+            await resendVerification();
+        } catch (error) {
+            // Error managed in context
+        }
+    };
+
+    const handleChangePassword = async (e) => {
+        e.preventDefault();
+        if (newPassword !== confirmPassword) {
+            return addNotification('New passwords do not match', 'error');
+        }
+        setLoadingPassword(true);
+        try {
+            await changePassword(currentPassword, newPassword);
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+        } catch (error) {
+            // Error handled in context
+        } finally {
+            setLoadingPassword(false);
+        }
+    };
+
     return (
-        <div className="mt-20">
+        <div className="mt-20 fade-in" style={{ paddingBottom: '40px', maxWidth: '1000px', margin: '0 auto' }}>
             <h1 className="section-title text-large mb-20 m-0">Settings</h1>
 
             <div className="grid-layout" style={{ gridTemplateColumns: '250px 1fr' }}>
@@ -73,32 +105,49 @@ const Settings = () => {
                 <Card>
                     <form onSubmit={handleSave}>
                         {activeTab === 'profile' && (
-                            <div>
-                                <h2 className="section-title mb-20 text-large">Profile Settings</h2>
-                                <div className="flex-align-center mb-20 gap-10">
-                                    <div className="user-avatar" style={{ width: '64px', height: '64px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--primary-color)', color: '#fff', fontSize: '24px', fontWeight: 'bold' }}>
-                                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={32} />}
+                            <div className="settings-section">
+                                <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Profile Settings</h2>
+                                <div className="flex-align-center gap-15" style={{ marginBottom: '30px' }}>
+                                    <div className="user-avatar shadow-sm" style={{ width: '80px', height: '80px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'linear-gradient(135deg, var(--primary-color), var(--secondary-color))', color: '#fff', fontSize: '28px', fontWeight: 'bold', borderRadius: '50%' }}>
+                                        {user?.name ? user.name.charAt(0).toUpperCase() : <User size={40} />}
                                     </div>
-                                    <Button variant="secondary" type="button">Change Avatar</Button>
-                                    {!user?.isVerified && (
-                                        <Button
-                                            variant="secondary"
-                                            type="button"
-                                            onClick={handleVerifyMock}
-                                            style={{ borderColor: 'var(--warning-color)', color: 'var(--warning-color)' }}
-                                        >
-                                            Simulate Email Verification
-                                        </Button>
-                                    )}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                        <Button variant="outline" type="button" style={{ width: 'fit-content' }}>Change Avatar</Button>
+                                        {!user?.isVerified ? (
+                                            <div style={{ display: 'flex', gap: '10px', marginTop: '5px' }}>
+                                                <Button
+                                                    variant="secondary"
+                                                    type="button"
+                                                    onClick={handleVerifyMock}
+                                                    style={{ borderColor: 'var(--warning-color)', color: 'var(--warning-color)', backgroundColor: 'rgba(245, 158, 11, 0.1)' }}
+                                                >
+                                                    Enter Token
+                                                </Button>
+                                                <Button
+                                                    variant="primary"
+                                                    type="button"
+                                                    onClick={handleResendVerification}
+                                                    style={{ boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}
+                                                >
+                                                    Resend Verification Mail
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                            <span style={{ fontSize: '12px', fontWeight: '600', color: 'var(--success-color)', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 8px', borderRadius: '12px', width: 'fit-content' }}>
+                                                Verified Account
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
-                                <div className="grid-2 mb-15">
+                                <div className="grid-2 mb-20 gap-20">
                                     <InputField label="First Name" defaultValue={user?.name?.split(' ')[0] || ''} />
                                     <InputField label="Last Name" defaultValue={user?.name?.split(' ').slice(1).join(' ') || ''} />
                                 </div>
-                                <div className="mb-15">
-                                    <InputField label="Email Address" type="email" defaultValue={user?.email || ''} readOnly />
+                                <div className="mb-20">
+                                    <InputField label="Email Address" type="email" defaultValue={user?.email || ''} readOnly style={{ backgroundColor: 'var(--bg-lite)' }} />
+                                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>Email address cannot be changed directly.</div>
                                 </div>
-                                <div className="mb-15">
+                                <div className="mb-20">
                                     <InputField label="Phone Number" defaultValue="+1 (555) 123-4567" />
                                 </div>
                             </div>
@@ -153,15 +202,36 @@ const Settings = () => {
 
                         {activeTab === 'security' && (
                             <div>
-                                <h2 className="section-title mb-20">Security Context</h2>
-                                <div className="mb-15">
-                                    <InputField label="Current Password" type="password" />
+                                <h2 className="section-title text-large" style={{ marginBottom: '30px', borderBottom: '1px solid var(--border-color)', paddingBottom: '15px' }}>Security</h2>
+                                {user?.googleId && !user?.password ? (
+                                    <div style={{ background: 'rgba(59, 130, 246, 0.05)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                        <p className="text-muted m-0" style={{ display: 'flex', alignItems: 'center', gap: '10px', fontWeight: 500 }}>
+                                            <Shield size={20} color="var(--primary-color)" />
+                                            You are logged in with Google. Password management is handled by your Google account.
+                                        </p>
+                                    </div>
+                                ) : (
+                                    <div style={{ marginBottom: '30px', paddingBottom: '30px', borderBottom: '1px solid var(--border-color)' }}>
+                                        <h3 className="section-title text-medium mb-20">Change Password</h3>
+                                        <div className="mb-20">
+                                            <InputField label="Current Password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                                        </div>
+                                        <div className="grid-2 gap-20 mb-20">
+                                            <InputField label="New Password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+                                            <InputField label="Confirm Password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                                        </div>
+                                        <Button variant="primary" type="button" onClick={handleChangePassword} disabled={loadingPassword}>
+                                            {loadingPassword ? 'Changing...' : 'Update Password'}
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <div className="mt-30">
+                                    <h3 className="section-title text-medium mb-15">Advanced Security</h3>
+                                    <Button variant="secondary" type="button" style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                                        <Key size={16} /> Enable Two-Factor Authentication
+                                    </Button>
                                 </div>
-                                <div className="grid-2 mb-15">
-                                    <InputField label="New Password" type="password" />
-                                    <InputField label="Confirm Password" type="password" />
-                                </div>
-                                <Button variant="secondary" type="button" className="mt-10"><Key size={16} className="mr-10" /> Enable Two-Factor Authentication</Button>
                             </div>
                         )}
 

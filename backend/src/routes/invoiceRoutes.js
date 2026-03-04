@@ -1,6 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const invoiceController = require('../controllers/invoiceController');
+const { protect, requireVerification } = require('../middleware/authMiddleware');
+
+router.use(protect);
+router.use(requireVerification);
 
 router.post('/', invoiceController.createInvoice);
 router.get('/', invoiceController.getAllInvoices);

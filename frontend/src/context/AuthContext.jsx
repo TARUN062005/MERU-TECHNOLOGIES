@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
     const registerUser = async (name, email, password) => {
         try {
             const { data } = await axiosInstance.post('/auth/register', { name, email, password });
-            console.log('Verification token:', data.verificationToken);
-            addNotification(`Registered successfully! Please verify. Token: ${data.verificationToken}`, 'success');
+            console.log('Registration successful, email sent.');
+            addNotification(`Registered successfully! Please check your email to verify.`, 'success');
             return data;
         } catch (error) {
             addNotification(error.response?.data?.message || 'Registration failed', 'error');
@@ -82,13 +82,35 @@ export const AuthProvider = ({ children }) => {
         }
     };
 
+    const resendVerification = async () => {
+        try {
+            const { data } = await axiosInstance.post('/auth/resend-verification');
+            addNotification('Verification email resent successfully!', 'success');
+            return data;
+        } catch (error) {
+            addNotification(error.response?.data?.message || 'Failed to resend verification', 'error');
+            throw error;
+        }
+    };
+
+    const changePassword = async (currentPassword, newPassword) => {
+        try {
+            const { data } = await axiosInstance.post('/auth/change-password', { currentPassword, newPassword });
+            addNotification('Password changed successfully!', 'success');
+            return data;
+        } catch (error) {
+            addNotification(error.response?.data?.message || 'Failed to change password', 'error');
+            throw error;
+        }
+    };
+
     const logout = () => {
         localStorage.removeItem('userInfo');
         setUser(null);
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, registerUser, loginUser, logout, verifyEmail, googleLogin }}>
+        <AuthContext.Provider value={{ user, loading, registerUser, loginUser, logout, verifyEmail, googleLogin, resendVerification, changePassword }}>
             {children}
         </AuthContext.Provider>
     );

@@ -20,7 +20,7 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
                 </button>
             </div>
             <nav className="sidebar-nav">
-                <NavLink onClick={handleClose} to="/" end className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
+                <NavLink onClick={handleClose} to="/dashboard" end className={({ isActive }) => isActive ? "nav-item active" : "nav-item"}>
                     <LayoutDashboard size={20} />
                     <span>Dashboard</span>
                 </NavLink>

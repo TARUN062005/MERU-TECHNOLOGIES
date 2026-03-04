@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { NotificationProvider } from './context/NotificationContext';
 import { AuthProvider } from './context/AuthContext';
 import Layout from './components/layout/Layout';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import InvoicesList from './pages/InvoicesList';
 import CreateInvoice from './pages/CreateInvoice';
@@ -24,10 +25,11 @@ const App = () => {
             <NotificationProvider>
                 <AuthProvider>
                     <Routes>
+                        <Route path="/" element={<Landing />} />
                         <Route path="/login" element={<Login />} />
                         <Route path="/register" element={<Register />} />
 
-                        <Route path="/" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
+                        <Route path="/dashboard" element={<ProtectedRoute><Layout><Home /></Layout></ProtectedRoute>} />
                         <Route path="/invoices" element={<ProtectedRoute><Layout><InvoicesList /></Layout></ProtectedRoute>} />
                         <Route path="/invoices/create" element={<ProtectedRoute><Layout><CreateInvoice /></Layout></ProtectedRoute>} />
                         <Route path="/invoices/:id" element={<ProtectedRoute><Layout><InvoiceDetail /></Layout></ProtectedRoute>} />
